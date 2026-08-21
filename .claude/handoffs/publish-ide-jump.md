@@ -1,6 +1,6 @@
 # Publishing ide-jump
 
-**Last Updated: 2026-08-21 16:35**
+**Last Updated: 2026-08-21 16:39**
 
 `agentience.ide-jump` is a Herdr plugin that gets you back to your IDE: one key
 raises the editor window for the focused pane's project, another opens a
@@ -376,3 +376,15 @@ list` prints window titles.
   briefly unlinking his live plugin. Marketplace index re-checked and still
   reporting the same 18:01Z build it reported 28 minutes earlier, so it has not
   rebuilt at all yet; absence still means nothing.
+- 2026-08-21 16:39 — Announced the plugin in the `sanvio` Discord channel
+  (id `1523531109101600851`) via the `discord-notify` skill: what it is, the
+  install line, the repo link, and the three gotchas a new user hits
+  (macOS-only, `bundle_path` for anything reporting as `Electron`, and the
+  `window.title` requirement). Sent HTTP 200.
+  **Fixed a blocker on the way:** `~/.claude/agentic-config.json` was invalid
+  JSON — a missing comma between the `sanvio` and `railmetrix` channel entries —
+  which made `discord-notify` exit 2 from *every* project, not just this one.
+  Backed up to `~/.claude/agentic-config.json.bak.<timestamp>` before editing.
+  The bot token lives in `~/.claude/agentic-config.local.json` and was untouched.
+  Note for next time: the skill's named-channel flag is `--channel-name`;
+  `--channel` takes a raw id, so passing a name there posts nowhere useful.
