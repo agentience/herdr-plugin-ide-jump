@@ -1,6 +1,6 @@
 # IDE Jump — a Herdr plugin
 
-**Last Updated: 2026-08-21 16:34**
+**Last Updated: 2026-08-21 16:15**
 
 Get back to your IDE. From a [Herdr](https://herdr.dev) pane, one key raises
 the editor window for *that pane's project* — no leaving the keyboard, no
@@ -186,6 +186,14 @@ plugin commands with the *plugin* directory as their cwd, so a cwd-based guess
 resolves to this plugin's own folder name — plausible-looking and always wrong.
 
 ## Troubleshooting
+
+A jump takes roughly 1.7s end to end and the picker's list about 0.8s, nearly
+all of it waiting on `osascript` round trips to System Events rather than doing
+any work. If you want to see where a given invocation went, `herdr plugin log
+list --plugin agentience.ide-jump` reports `started_unix_ms` and
+`finished_unix_ms` per run — note that timing `herdr plugin action invoke`
+yourself measures nothing, because actions run detached and the CLI returns
+immediately.
 
 Every invocation writes one line to `ide-jump.log` under
 `HERDR_PLUGIN_STATE_DIR` (in practice
