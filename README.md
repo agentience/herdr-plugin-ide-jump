@@ -1,6 +1,6 @@
 # IDE Jump — a Herdr plugin
 
-**Last Updated: 2026-08-21 15:32**
+**Last Updated: 2026-08-21 16:22**
 
 Get back to your IDE. From a [Herdr](https://herdr.dev) pane, one key raises
 the editor window for *that pane's project* — no leaving the keyboard, no
@@ -21,17 +21,50 @@ wide — enumerate windows, raise one — so a port is one new module; see
 ## Install
 
 ```bash
-herdr plugin install <owner>/<repo>
+herdr plugin install agentience/herdr-plugin-ide-jump
 ```
 
-or, to develop against a local checkout:
+That is the whole install. There is no build step — the plugin is Python
+against the standard library — so Herdr clones the repo and registers it.
+It asks for confirmation first; `-y` skips the prompt, and `--ref <tag-or-sha>`
+pins a version instead of tracking the default branch.
+
+Confirm it landed, and that the id Herdr registered is the one your keybindings
+will name:
 
 ```bash
-herdr plugin link /path/to/herdr-plugin-ide-jump
+herdr plugin list        # look for: agentience.ide-jump (IDE Jump) enabled
 ```
 
-Requires Herdr 0.7.4 or newer (the release that added popup plugin panes) and
-`python3`. Verified against Herdr 0.8.2.
+Installing does **not** bind any keys — see [Keybindings](#keybindings) below,
+which is the step that actually makes the plugin do something.
+
+### Requirements
+
+- **Herdr 0.7.4 or newer** — the release that added popup plugin panes, which
+  the picker is. Verified against 0.8.2.
+- **`python3`** on `PATH`. No `pip install`, no virtualenv, and no `fzf`, `sk`,
+  `peco` or `gum`: the picker is standard library only, so there is nothing to
+  install alongside it.
+- **macOS**, and **Accessibility permission for the terminal application
+  running Herdr** (System Settings → Privacy & Security → Accessibility).
+  Without it the accessibility API returns no windows at all, and both gestures
+  fail the same way they would if they were never bound — silently. Grant it
+  before concluding anything is broken.
+
+### Developing against a local checkout
+
+```bash
+git clone https://github.com/agentience/herdr-plugin-ide-jump
+herdr plugin link "$PWD/herdr-plugin-ide-jump"
+```
+
+A linked plugin runs straight from the working tree, so edits take effect on
+the next invocation with no reinstall in between.
+
+**Linked and installed are mutually exclusive.** Installing on top of a locally
+linked plugin is refused, not silently overridden — run
+`herdr plugin unlink agentience.ide-jump` first.
 
 ## Keybindings
 
