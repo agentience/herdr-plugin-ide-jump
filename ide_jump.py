@@ -24,6 +24,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from idejump import config, context, picker  # noqa: E402
 from idejump.backends import BackendUnavailable, get_backend  # noqa: E402
+from idejump.backends import macos  # noqa: E402
 
 PLUGIN_ID = "agentience.ide-jump"
 
@@ -162,6 +163,7 @@ def main():
     if cmd == "open-picker":
         return cmd_open_picker()
     app = config.load()
+    macos.report = log
     try:
         backend = get_backend(app)
     except BackendUnavailable as exc:

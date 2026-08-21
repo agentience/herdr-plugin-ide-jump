@@ -147,11 +147,17 @@ Every invocation writes one line to `ide-jump.log` under
 `~/.local/state/herdr/plugins/agentience.ide-jump/`), falling back to the
 plugin config directory and then `~/.local/state/herdr-ide-jump/`.
 
-When a key "does nothing", that line separates the two causes that look
-identical from the outside: no line at all means the command was never invoked
-(a keybinding or reload problem), while a line reading `match=-1` means it ran
-and found no window for that project (a naming problem — compare the resolved
-project against `python3 ide_jump.py list`).
+When a key "does nothing", that line separates the causes that look identical
+from the outside:
+
+- **No line at all** — the command was never invoked. A keybinding or reload
+  problem, not a plugin one.
+- **`match=-1`** — it ran and found no window for that project. A naming
+  problem: compare the resolved project against `python3 ide_jump.py list`, and
+  see the window-title note above.
+- **`osascript timed out` / `osascript failed`** — the accessibility call
+  itself did not come back. Check that the terminal running Herdr has
+  Accessibility permission in System Settings > Privacy & Security.
 
 ## License
 
