@@ -1,23 +1,22 @@
-# Window Switch — a Herdr plugin
+# IDE Jump — a Herdr plugin
 
 **Last Updated: 2026-08-21 15:32**
 
-Jump from a [Herdr](https://herdr.dev) pane straight to the editor window for
-that pane's project, or pick one from a filterable popup — without leaving the
-keyboard and without hunting through a Mission Control grid of ten identical
-editor windows.
+Get back to your IDE. From a [Herdr](https://herdr.dev) pane, one key raises
+the editor window for *that pane's project* — no leaving the keyboard, no
+hunting through a Mission Control grid of ten identical editor windows.
 
 Two gestures:
 
-- **Jump** raises the window belonging to the focused pane's project. No UI. It
-  is the "take me to my editor" key.
+- **Jump** raises the window belonging to the focused pane's project. No UI.
+  This is the point of the plugin; the picker below is the fallback.
 - **Pick** opens a popup list of every open window, already positioned on the
   focused pane's project, so the key plus Enter is the same direct jump and
   typing a few letters goes somewhere else.
 
 macOS only today. The window-manager surface is deliberately two operations
 wide — enumerate windows, raise one — so a port is one new module; see
-`windowswitch/backends/__init__.py` for what X11 and Wayland would each need.
+`idejump/backends/__init__.py` for what X11 and Wayland would each need.
 
 ## Install
 
@@ -28,7 +27,7 @@ herdr plugin install <owner>/<repo>
 or, to develop against a local checkout:
 
 ```bash
-herdr plugin link /path/to/herdr-plugin-window-switch
+herdr plugin link /path/to/herdr-plugin-ide-jump
 ```
 
 Requires Herdr 0.7.4 or newer (the release that added popup plugin panes) and
@@ -43,13 +42,13 @@ Herdr does not bind plugin actions for you. Add these to
 [[keys.command]]
 key = "prefix+alt+c"
 type = "plugin_action"
-command = "trellios.window-switch.jump"
+command = "agentience.ide-jump.jump"
 description = "jump to this project's editor window"
 
 [[keys.command]]
 key = "ctrl+shift+w"
 type = "plugin_action"
-command = "trellios.window-switch.pick"
+command = "agentience.ide-jump.pick"
 description = "pick an editor window"
 ```
 
@@ -58,7 +57,7 @@ Then `herdr server reload-config`.
 ## Configuration
 
 Optional. Write `config.json` into the directory
-`herdr plugin config-dir trellios.window-switch` prints:
+`herdr plugin config-dir agentience.ide-jump` prints:
 
 ```json
 {
@@ -90,7 +89,7 @@ In order, stopping at the first that answers:
    `apps/web` both land on the one window.
 4. `focused_pane_cwd` / `workspace_cwd` from the invocation context.
 
-To see which of those answered, run `python3 window_switch.py why` from the
+To see which of those answered, run `python3 ide_jump.py why` from the
 plugin directory: it prints the resolved project, the signal that produced it,
 the preselected window, and the raw invocation context.
 
@@ -100,16 +99,16 @@ resolves to this plugin's own folder name — plausible-looking and always wrong
 
 ## Troubleshooting
 
-Every invocation writes one line to `window-switch.log` under
+Every invocation writes one line to `ide-jump.log` under
 `HERDR_PLUGIN_STATE_DIR` (in practice
-`~/.local/state/herdr/plugins/trellios.window-switch/`), falling back to the
-plugin config directory and then `~/.local/state/herdr-window-switch/`.
+`~/.local/state/herdr/plugins/agentience.ide-jump/`), falling back to the
+plugin config directory and then `~/.local/state/herdr-ide-jump/`.
 
 When a key "does nothing", that line separates the two causes that look
 identical from the outside: no line at all means the command was never invoked
 (a keybinding or reload problem), while a line reading `match=-1` means it ran
 and found no window for that project (a naming problem — compare the resolved
-project against `python3 window_switch.py list`).
+project against `python3 ide_jump.py list`).
 
 ## License
 

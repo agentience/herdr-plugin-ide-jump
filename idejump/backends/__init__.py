@@ -29,6 +29,6 @@ def get_backend(app):
         from . import macos
         return macos.MacOSBackend(app)
     raise BackendUnavailable(
-        "no window backend for platform {!r} -- see windowswitch/backends/"
+        "no window backend for platform {!r} -- see idejump/backends/"
         "__init__.py for what a port needs to implement".format(sys.platform)
     )

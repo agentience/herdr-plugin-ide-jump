@@ -22,10 +22,10 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from windowswitch import config, context, picker  # noqa: E402
-from windowswitch.backends import BackendUnavailable, get_backend  # noqa: E402
+from idejump import config, context, picker  # noqa: E402
+from idejump.backends import BackendUnavailable, get_backend  # noqa: E402
 
-PLUGIN_ID = "trellios.window-switch"
+PLUGIN_ID = "agentience.ide-jump"
 
 
 def log_dir():
@@ -43,14 +43,14 @@ def log_dir():
         d = os.environ.get(key)
         if d:
             return d
-    return os.path.expanduser("~/.local/state/herdr-window-switch")
+    return os.path.expanduser("~/.local/state/herdr-ide-jump")
 
 
 def log(msg):
     try:
         d = log_dir()
         os.makedirs(d, exist_ok=True)
-        with open(os.path.join(d, "window-switch.log"), "a") as fh:
+        with open(os.path.join(d, "ide-jump.log"), "a") as fh:
             fh.write("{} {}\n".format(
                 datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), msg))
     except Exception:
@@ -99,13 +99,13 @@ def cmd_open_picker():
     args = [context.herdr_bin(), "plugin", "pane", "open",
             "--plugin", PLUGIN_ID, "--entrypoint", "picker"]
     if name:
-        args += ["--env", "WINDOW_SWITCH_PROJECT=" + name]
+        args += ["--env", "IDE_JUMP_PROJECT=" + name]
     if root:
-        args += ["--env", "WINDOW_SWITCH_ROOT=" + root]
-    args += ["--env", "WINDOW_SWITCH_WHY=" + why]
+        args += ["--env", "IDE_JUMP_ROOT=" + root]
+    args += ["--env", "IDE_JUMP_WHY=" + why]
     # Forwarded so the popup half can be exercised without holding the keyboard.
-    if os.environ.get("WINDOW_SWITCH_SELFTEST"):
-        args += ["--env", "WINDOW_SWITCH_SELFTEST=1"]
+    if os.environ.get("IDE_JUMP_SELFTEST"):
+        args += ["--env", "IDE_JUMP_SELFTEST=1"]
     r = subprocess.run(args, capture_output=True, text=True)
     log("open-picker project={!r} via {} rc={} {}".format(
         name, why, r.returncode, (r.stderr or r.stdout).strip()[:200]))
@@ -117,14 +117,14 @@ def cmd_picker(app, backend):
     if not items:
         sys.stderr.write("No {} windows found.\n".format(app.app_name))
         return 1
-    name = os.environ.get("WINDOW_SWITCH_PROJECT") or ""
-    why = os.environ.get("WINDOW_SWITCH_WHY") or ""
+    name = os.environ.get("IDE_JUMP_PROJECT") or ""
+    why = os.environ.get("IDE_JUMP_WHY") or ""
     if not name:
         name, _root, why = context.resolve_project()
     idx = picker.preselect_index(items, name)
     log("picker project={!r} via {} preselect={} {!r}".format(
         name, why, idx, items[idx]))
-    if os.environ.get("WINDOW_SWITCH_SELFTEST"):
+    if os.environ.get("IDE_JUMP_SELFTEST"):
         # Prove the popup launched and handed us a real terminal, then get out.
         # The interactive path holds all keyboard input until Esc, which is not
         # something to trigger from a script running under someone's session.
