@@ -1,0 +1,5 @@
+{
+  "app_name": "Visual Studio Code",
+  "process_name": "Code",
+  "open_command": ["code", "{path}"]
+}

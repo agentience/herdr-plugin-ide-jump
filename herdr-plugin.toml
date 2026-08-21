@@ -1,0 +1,30 @@
+id = "trellios.window-switch"
+name = "Window Switch"
+version = "0.1.0"
+min_herdr_version = "0.7.4"
+description = "Jump straight to the editor window for the focused pane's project, or pick one from a filterable popup."
+platforms = ["macos"]
+
+# Raise the editor window belonging to the focused pane's project. No UI.
+[[actions]]
+id = "jump"
+title = "Jump to this project's editor window"
+contexts = ["workspace"]
+command = ["python3", "window_switch.py", "jump"]
+
+# Open the picker. Actions run detached with no terminal, so this action's only
+# job is to ask Herdr for the popup pane below, forwarding the invocation
+# context the popup would otherwise have to re-derive.
+[[actions]]
+id = "pick"
+title = "Pick an editor window"
+contexts = ["workspace"]
+command = ["python3", "window_switch.py", "open-picker"]
+
+[[panes]]
+id = "picker"
+title = "Switch editor window"
+placement = "popup"
+width = "60%"
+height = "60%"
+command = ["python3", "window_switch.py", "picker"]
