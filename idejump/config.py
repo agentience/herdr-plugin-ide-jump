@@ -14,15 +14,22 @@ import os
 
 
 class App:
-    def __init__(self, app_name, process_name, open_command=None):
+    def __init__(self, app_name, process_name, bundle_path=None,
+                 open_command=None):
         self.app_name = app_name
         self.process_name = process_name
+        self.bundle_path = bundle_path
         self.open_command = open_command
 
 
 DEFAULTS = {
     "app_name": "Visual Studio Code",
     "process_name": "Code",
+    # Optional and strongly preferred when the process name is generic.
+    # A VS-Code-derived editor that did not rename its executable reports to
+    # the accessibility API as "Electron", which collides with every other
+    # Electron app and every node_modules/electron dev tree on the machine.
+    "bundle_path": None,
     # Run when no open window matches the project. `{path}` is substituted with
     # the project root. Set to null to do nothing instead.
     "open_command": ["code", "{path}"],
@@ -45,4 +52,5 @@ def load():
                 data.update({k: v for k, v in user.items() if k in DEFAULTS})
         except Exception:
             pass
-    return App(data["app_name"], data["process_name"], data["open_command"])
+    return App(data["app_name"], data["process_name"],
+               data["bundle_path"], data["open_command"])

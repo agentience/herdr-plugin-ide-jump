@@ -1,5 +1,6 @@
 {
   "app_name": "Visual Studio Code",
   "process_name": "Code",
+  "bundle_path": "/Applications/Visual Studio Code.app",
   "open_command": ["code", "{path}"]
 }

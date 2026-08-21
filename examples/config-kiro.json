@@ -1,0 +1,6 @@
+{
+  "app_name": "Kiro",
+  "process_name": "Electron",
+  "bundle_path": "/Applications/Kiro.app",
+  "open_command": ["kiro", "{path}"]
+}

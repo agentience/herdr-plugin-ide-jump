@@ -68,13 +68,56 @@ Optional. Write `config.json` into the directory
 ```
 
 - `app_name` — what the OS calls the application, used to bring it forward.
-- `process_name` — what the accessibility API calls its process; often shorter
-  than the app name (`Code`, `Cursor`).
+- `process_name` — what the accessibility API calls its process. **Not the app
+  name**: often shorter (`Code`), and for a VS-Code-derived editor that never
+  renamed its executable, just `Electron`.
+- `bundle_path` — optional, and the reliable way to say which app you mean.
+  Set it whenever `process_name` is generic.
 - `open_command` — run by **jump** when no open window matches the project,
   with `{path}` replaced by the project root. Set to `null` to do nothing
   instead of opening a new window.
 
 Nothing in the mechanism is VS-Code-specific; the defaults just happen to be.
+
+### Other editors
+
+Any editor with ordinary windows works. Kiro, for example — see
+`examples/config-kiro.json`:
+
+```json
+{
+  "app_name": "Kiro",
+  "process_name": "Electron",
+  "bundle_path": "/Applications/Kiro.app",
+  "open_command": ["kiro", "{path}"]
+}
+```
+
+**Set `bundle_path` for anything that reports as `Electron`.** On the machine
+this was developed against there were two such processes — Kiro and a stray
+`node_modules/electron` dev tree — and the stray one sorted first with no
+windows at all. Resolving by name alone would have found nothing and looked
+like a broken plugin rather than a misconfigured one. (The backend also breaks
+name ties by window count, which happens to rescue that particular case, but do
+not rely on a tiebreak when you can just name the app.)
+
+### Your editor must put the folder name in the window title
+
+Matching is by window title, because that is the only thing the accessibility
+API reliably exposes. **VS Code and its derivatives title windows after the
+active *file* by default**, so a window showing `chrome.ts` cannot be matched to
+a project called `my-repo`.
+
+Set `window.title` in the editor to include the workspace root:
+
+```json
+{ "window.title": "${rootName}" }
+```
+
+`"${rootName}${separator}${activeEditorShort}"` also works — the matcher takes
+the head of the title before an em dash, en dash, or ` - ` separator, so a
+suffix like ` — Modified` or ` — 1 problem in this file` does not break it.
+What does not work is a title that leads with the filename.
 
 ## How it decides which project you meant
 
