@@ -26,6 +26,15 @@ against 0.2 seconds for the identical work through
 hung. Selection therefore happens in Python between two cheap osascript calls,
 rather than inside one clever script.
 
+Finding the pid does not use System Events at all, because a
+`whose background only is false` filter costs ~0.5s and the cost is the
+enumeration itself, not the property being read -- so asking it for ids, names
+and bundle paths meant three filters and ~1.5s before a single window title had
+been fetched. `ps` is the same answer for ~0.05s. What remains is one
+ENUM_WINDOWS round trip at ~0.7s, which is the real work and the floor for this
+approach; getting under it means talking to the accessibility API directly
+instead of through osascript.
+
 WINDOW IDENTITY. Matching is by title, never by index: window z-order was
 observed changing between two listings minutes apart, so an index captured
 during enumeration is stale by the time the raise runs. The index is passed only
@@ -33,23 +42,23 @@ as a last-resort fallback for when the title changed underneath us.
 """
 import subprocess
 
-# Bulk plural queries only. `unix id of (every process whose ...)` is one round
-# trip; `repeat with p in (every process whose ...)` followed by `unix id of p`
-# re-runs the filter on every dereference and takes tens of seconds. Same trap
-# as SPEED above, one level up. Three filters at ~0.5s each in one osascript
-# process beats one loop that looks tidier.
-LIST_PROCS = '''
-tell application "System Events"
-  set AppleScript's text item delimiters to linefeed
-  set idsText to (unix id of (every process whose background only is false)) as text
-  set namesText to (name of (every process whose background only is false)) as text
-  set pathsText to ""
-  try
-    set pathsText to (POSIX path of (file of (every process whose background only is false))) as text
-  end try
-  return idsText & linefeed & "\t--\t" & linefeed & namesText & linefeed & "\t--\t" & linefeed & pathsText
-end tell
-'''
+# Process discovery is `ps`, not System Events -- see SPEED above. Validated
+# against `unix id/name/POSIX path of (every process whose background only is
+# false)` on a 26-GUI-process machine: every one present, with byte-identical
+# name and bundle path, in 0.048s against 1.33s.
+#
+# Two shapes have to survive the walk, and a rule that handles one naturally
+# breaks the other:
+#   * Helpers nest a bundle inside their parent -- ".../Visual Studio Code.app/
+#     Contents/Frameworks/Code Helper (Plugin).app/Contents/MacOS/...". They
+#     share names with each other in the dozens and own no windows, so letting
+#     them through would swamp the ambiguity tiebreak below with processes that
+#     can never be the answer. They are excluded by Contents/Frameworks.
+#   * A few apps nest a bundle inside their own Contents/MacOS -- Docker is
+#     "/Applications/Docker.app/Contents/MacOS/Docker Desktop.app/Contents/
+#     MacOS/Docker Desktop". Taking the OUTERMOST .app drops these entirely,
+#     which is why the innermost qualifying bundle wins instead.
+PS_ARGS = ["ps", "-axwwo", "pid=,comm="]
 
 COUNT_WINDOWS = '''
 on run argv
@@ -131,6 +140,40 @@ def _osascript(script, *args, timeout=15):
     return r.stdout
 
 
+def _running_apps():
+    """(pid, process_name, bundle_path) for every running application bundle."""
+    try:
+        r = subprocess.run(PS_ARGS, capture_output=True, text=True, timeout=10)
+    except (subprocess.TimeoutExpired, OSError) as exc:
+        _note("ps failed {!r}".format(exc))
+        return []
+    rows = []
+    for line in r.stdout.splitlines():
+        pid, _, exe = line.strip().partition(" ")
+        exe = exe.strip()
+        if not pid.isdigit() or "/Contents/Frameworks/" in exe:
+            continue
+        # Innermost .app whose remainder is exactly /Contents/MacOS/<name>.
+        found = None
+        at = exe.find(".app/")
+        while at != -1:
+            bundle, rest = exe[:at + 4], exe[at + 4:]
+            leaf = rest.rsplit("/", 1)[-1]
+            if rest == "/Contents/MacOS/" + leaf:
+                found = (bundle, leaf)
+            at = exe.find(".app/", at + 1)
+        if not found:
+            continue
+        bundle, leaf = found
+        # System Events calls an executable named "Docker Desktop.app" just
+        # "Docker Desktop". Match that, so a process_name copied out of System
+        # Events still resolves.
+        if leaf.endswith(".app"):
+            leaf = leaf[:-4]
+        rows.append((int(pid), leaf, bundle))
+    return rows
+
+
 class MacOSBackend:
     name = "macos"
 
@@ -140,20 +183,7 @@ class MacOSBackend:
 
     def _candidates(self):
         """(pid, name, bundle_path) for every process that could be the target."""
-        out = _osascript(LIST_PROCS)
-        blocks = out.split("\t--\t")
-        if len(blocks) < 3:
-            return []
-        ids, names, paths = [b.strip().splitlines() for b in blocks[:3]]
-        rows = []
-        for i, raw in enumerate(ids):
-            if not raw.strip().isdigit():
-                continue
-            rows.append((
-                int(raw.strip()),
-                names[i].strip() if i < len(names) else "",
-                paths[i].strip() if i < len(paths) else "",
-            ))
+        rows = _running_apps()
         want_path = (self.app.bundle_path or "").rstrip("/")
         if want_path:
             return [r for r in rows if r[2].rstrip("/") == want_path]
