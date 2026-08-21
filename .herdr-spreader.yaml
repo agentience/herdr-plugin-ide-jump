@@ -1,0 +1,12 @@
+# Herdr workspace layout for this repo, read by herdr-spreader via an
+# `include:` from the global config. Paths are relative to this file, so this
+# works from any checkout or worktree.
+workspaces:
+  - name: herdr-plugin-ide-jump
+    tabs:
+      - label: agent
+        panes:
+          - command: claude --dangerously-skip-permissions "/agentic:handoff --read .claude/handoffs/publish-ide-jump.md"
+      - label: ad-hoc
+        panes:
+          - {}   # bare shell
