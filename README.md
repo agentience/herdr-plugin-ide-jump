@@ -1,18 +1,28 @@
 # IDE Jump — a Herdr plugin
 
-**Last Updated: 2026-08-21 16:22**
+**Last Updated: 2026-08-21 16:34**
 
 Get back to your IDE. From a [Herdr](https://herdr.dev) pane, one key raises
 the editor window for *that pane's project* — no leaving the keyboard, no
 hunting through a Mission Control grid of ten identical editor windows.
 
-Two gestures:
+Two gestures, which in the ordinary case do the same thing:
 
-- **Jump** raises the window belonging to the focused pane's project. No UI.
-  This is the point of the plugin; the picker below is the fallback.
-- **Pick** opens a popup list of every open window, already positioned on the
-  focused pane's project, so the key plus Enter is the same direct jump and
-  typing a few letters goes somewhere else.
+- **Pick** opens a popup list of every open editor window, already sitting on
+  the focused pane's project. Key then Enter is a direct jump; typing a few
+  letters goes somewhere else instead.
+- **Jump** raises that same window with no UI and no Enter.
+
+**Start with pick.** Because the picker preselects, jump saves exactly one
+keypress on a project whose window is already open — that is the whole of the
+difference, and it is not much. The two diverge only when nothing matches:
+jump runs the configured `open_command` and opens the project, which is the
+only path that handles *the editor isn't up yet*, while pick has nothing to
+preselect, opens on an unrelated first row that Enter will happily raise, and
+exits with an error when there are no editor windows at all.
+
+So: bind **pick** for everyday use, and add **jump** if you want the cold-start
+behaviour or prefer one keystroke to two. Neither is a fallback for the other.
 
 macOS only today. The window-manager surface is deliberately two operations
 wide — enumerate windows, raise one — so a port is one new module; see
@@ -69,20 +79,22 @@ linked plugin is refused, not silently overridden — run
 ## Keybindings
 
 Herdr does not bind plugin actions for you. Add these to
-`~/.config/herdr/config.toml`:
+`~/.config/herdr/config.toml` — `pick` first, since it is the one to reach for:
 
 ```toml
-[[keys.command]]
-key = "prefix+alt+c"
-type = "plugin_action"
-command = "agentience.ide-jump.jump"
-description = "jump to this project's editor window"
-
 [[keys.command]]
 key = "ctrl+shift+w"
 type = "plugin_action"
 command = "agentience.ide-jump.pick"
 description = "pick an editor window"
+
+# Optional. Same result one keypress sooner when the window already exists,
+# and the only gesture that opens the project when it does not.
+[[keys.command]]
+key = "prefix+alt+c"
+type = "plugin_action"
+command = "agentience.ide-jump.jump"
+description = "jump to this project's editor window"
 ```
 
 Then `herdr server reload-config`.
