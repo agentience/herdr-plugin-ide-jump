@@ -1,6 +1,6 @@
 # Publishing ide-jump
 
-**Last Updated: 2026-08-21 16:30**
+**Last Updated: 2026-08-21 16:35**
 
 `agentience.ide-jump` is a Herdr plugin that gets you back to your IDE: one key
 raises the editor window for the focused pane's project, another opens a
@@ -84,23 +84,12 @@ Nothing else is open.
 > and update **Last Updated** each time you edit this file. The next session
 > after you reads this file, not your transcript.
 
-- [ ] **Press `ctrl+shift+w` and `prefix+alt+c` once each.** The only check that
-      could not be automated. A selftest proved the popup launches and hands the
-      picker a working `/dev/tty`
-      (`herdr plugin pane open --plugin agentience.ide-jump --entrypoint picker
-      --env IDE_JUMP_SELFTEST=1`), but **raw-mode keyboard handling inside a
-      Herdr popup has never taken a real keystroke** — arrows, filtering, Enter,
-      Esc are all unproven. Expected: `ctrl+shift+w` opens the list with the
-      current repo highlighted, Enter jumps, Esc closes; `prefix+alt+c` jumps
-      with no UI.
-      If a key does nothing, read the log **before** suspecting the wiring —
-      see Troubleshooting below.
-      **`ctrl+shift+w` is the one that matters.** Reframed 2026-08-21: because
-      the picker preselects the focused pane's project, `pick` does everything
-      `jump` does plus one keypress, so the picker is now documented as the
-      primary gesture — and it is also the half that has never taken a real
-      keystroke. `prefix+alt+c` is already verified through
-      `herdr plugin action invoke`; pressing it only proves the keybinding.
+- [x] **Press `ctrl+shift+w` and `prefix+alt+c` once each.** Done by Troy
+      2026-08-21 16:35, against `1eb7954`. The picker works interactively —
+      raw-mode keyboard handling inside a Herdr popup takes real keystrokes,
+      which had never been proven. Reported as "not instantaneous, but snappy
+      enough" after the two perf fixes took the list render from 2080ms to
+      298ms. **This was the last item gating everything else.**
 - [x] **Create the GitHub repo and push.** Done 2026-08-21 16:05 —
       `agentience/herdr-plugin-ide-jump`, public, `origin/main` tracking.
 - [x] **Add the GitHub topic `herdr-plugin`.** Applied and verified via
@@ -118,10 +107,11 @@ Nothing else is open.
       unlinking: `herdr plugin install agentience/herdr-plugin-ide-jump`. There
       are no `[[build]]` commands, so install is a clone plus registration —
       but it has never been exercised.
-      **Blocked on the keypress check above, deliberately.** Unlinking swaps the
-      live plugin out from under Troy's working keybindings; do not do it while
-      the picker is still unproven, or a failure has two candidate causes
-      instead of one.
+      **No longer blocked** — the keypress check passed 2026-08-21 16:35. Still
+      worth doing deliberately rather than casually: unlinking swaps the live
+      plugin out from under Troy's working keybindings, so re-link immediately
+      afterwards (`herdr plugin link <this dir>`) and confirm with
+      `herdr plugin list`. Troy has not yet said to go ahead.
 - [ ] Optional: **README screenshot or a short cast of the picker.** The
       marketplace card is a repo card; nothing sells a picker like seeing it.
       Now that the repo is public this is the highest-value optional item.
@@ -225,7 +215,7 @@ curl -sS -L https://herdr.dev/plugins | grep -c 'herdr-plugin-ide-jump'
 **Read `generatedAt` before concluding anything.** It is a UTC timestamp on the
 index build, and the published index can be *hours* stale — at 2026-08-21
 23:07 UTC the live page still reported `generatedAt: 2026-08-21T18:01:29Z`,
-**5h06m old**, against the "refreshes every 30 minutes" this document
+**5h06m old** — and at 23:35 UTC it reported *the same build*, unchanged, against the "refreshes every 30 minutes" this document
 previously claimed. That claim came from the Herdr docs, not from observation;
 do not plan around it. Absence from an index whose `generatedAt` predates the
 repo's creation (2026-08-21 23:05 UTC) means nothing at all.
@@ -288,8 +278,9 @@ list` prints window titles.
   keybindings were repointed.
 
 **NOT verified — do not assume:**
-- **Interactive picker input.** Arrows, filtering, Enter and Esc inside a Herdr
-  popup have never taken a real keystroke. First work item.
+- ~~Interactive picker input~~ — **verified 2026-08-21 16:35 by Troy** against
+  `1eb7954`: the popup takes real keystrokes and the picker works. This was the
+  longest-standing unknown in the project.
 - **`herdr plugin install` from GitHub.** Never run. The remote now exists, so
   this is unblocked once the keypress check passes.
 - **That the marketplace actually indexed it.** Absent from the index as of
@@ -377,3 +368,11 @@ list` prints window titles.
   Popup list render is now **298ms**, from 2080ms before either fix
   (`f314b9b` + `1eb7954`). `jump` end to end via Herdr is ~938ms, from 2985ms.
   Raise re-verified (`match=0` is a hit; no-match is `-1`).
+- 2026-08-21 16:35 — **Troy pressed the keys; the picker works.** Arrows,
+  filtering, Enter and Esc inside a Herdr popup all take real input — the one
+  thing that could not be automated and the last item gating the rest. Verdict
+  on speed after the two fixes: "not instantaneous, but snappy enough". The
+  install-path test is now unblocked, pending Troy's go-ahead since it means
+  briefly unlinking his live plugin. Marketplace index re-checked and still
+  reporting the same 18:01Z build it reported 28 minutes earlier, so it has not
+  rebuilt at all yet; absence still means nothing.
