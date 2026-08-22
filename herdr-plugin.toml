@@ -3,7 +3,7 @@ name = "IDE Jump"
 version = "0.1.0"
 min_herdr_version = "0.7.4"
 description = "Get back to your IDE: raise the editor window for the focused pane's project, or pick one from a filterable popup."
-platforms = ["macos"]
+platforms = ["macos", "windows"]
 
 # Raise the editor window belonging to the focused pane's project. No UI.
 [[actions]]
@@ -28,3 +28,4 @@ placement = "popup"
 width = "60%"
 height = "60%"
 command = ["python3", "ide_jump.py", "picker"]
+
