@@ -1,15 +1,16 @@
 # Publishing ide-jump
 
-**Last Updated: 2026-08-24 08:57**
+**Last Updated: 2026-08-24 09:14**
 
 `agentience.ide-jump` is a Herdr plugin that gets you back to your IDE: one key
 raises the editor window for the focused pane's project, another opens a
 filterable popup already sitting on that project. It is **built, linked,
 published, and confirmed indexed in the marketplace** — Troy's `prefix+alt+c`
-and `ctrl+shift+w` both route through it live on this machine. What remains is
-two things gated on Troy's go-ahead (the install-path test, and landing the
-picker screenshot) plus checking whether anyone has replied in the Discord
-channel it was announced in.
+and `ctrl+shift+w` both route through it live on this machine. The screenshot
+is cropped and in the README, and the Discord channel has been checked — no
+replies. **One required item remains: the install-path test**, which is gated
+on Troy's go-ahead because it briefly unlinks his live plugin. There are also
+uncommitted README + screenshot changes sitting in the working tree.
 
 It was built inside the IFTI repo's session on 2026-08-21 and handed over here
 because the work is no longer about IFTI. The originating document is
@@ -33,6 +34,10 @@ down. Read it only for the Herdr-adoption context around it.
   of that file are at `~/.config/herdr/config.toml.bak.*`; the two scripts the
   plugin replaced (`~/.claude/scripts/herdr-code-window.sh` and
   `vscode-window-switch.py`) are untouched on disk, so a revert is one `cp`.
+- **The working tree is dirty as of 2026-08-24 09:14** and nothing has been
+  committed this session: `docs/jump-popup.png` (new), `README.md` (screenshot
+  reference + date), this handoff, and the untracked source `jump-popup.jpg` at
+  the repo root. Commit the first three; leave or delete the JPEG.
 
 ## Decisions needed
 
@@ -140,25 +145,30 @@ Nothing else is open.
       (`herdr plugin link <this dir>`) and confirm with `herdr plugin list`.
       Troy has not yet said to go ahead. **Next actionable step for a fresh
       session, pending Troy's word.**
-- [ ] **(in progress)** **Crop and land `jump-popup.jpg` in the README.** Troy
-      took a screenshot 2026-08-24 08:56, untracked, sitting at the repo root
-      (1000x839 JPEG). Viewed: it shows the popup pane titled "Jump to IDE
-      window", body "Switch to Visual Studio Code window", a `6/6` count, six
-      repo rows with **`herdr-plugin-ide-jump` correctly preselected**, and the
-      hint line `type to filter · ↑↓ move · enter switch · esc cancel` — real
-      evidence the preselect works. It is not usable as-is: it is a crop of a
-      full screen, so fragments of other terminal panes bleed in along both the
-      left and right edges, and roughly the bottom two-thirds is empty black
-      below the six rows. Needs a tighter crop to just the popup, then commit
-      it and add a README reference. Not yet committed — Troy has not asked for
-      that either.
-- [ ] **Check the `sanvio` Discord channel (id `1523531109101600851`) for
-      replies.** The plugin was announced there 2026-08-21 16:39 via
-      `discord-notify`, HTTP 200, ending "feedback and bug reports welcome."
-      Nobody has looked since. It is the only channel where anyone other than
-      Troy has been told this plugin exists, so a reply there — especially a
-      bug report from a first outside user — is the single most valuable thing
-      that could be waiting. Do not assume silence; check.
+- [x] **Crop and land the picker screenshot in the README.** Done 2026-08-24
+      09:12. Troy had already re-cropped `jump-popup.jpg` to 517x839 -> 517x416
+      by 09:00, after the previous entry was written, but it still carried
+      terminal bleed on both edges and ~40% empty black below the six rows.
+      Cropped tight to the popup box (x 33-488, y 26-252 of that file), closed
+      the box with a redrawn border, added an 8px margin, and saved as PNG at
+      native resolution -- `docs/jump-popup.png`, 472x242. Referenced from the
+      README directly under the opening paragraph, with alt text naming what it
+      demonstrates (the preselected row). README **Last Updated** bumped. The
+      source `jump-popup.jpg` is left untracked at the repo root; delete it or
+      leave it, but do not commit it -- `docs/jump-popup.png` is the one the
+      README points at. **Not yet committed.**
+- [x] **Check the `sanvio` Discord channel (id `1523531109101600851`) for
+      replies.** Checked 2026-08-24 09:10 by reading the last 25 messages
+      straight off the Discord API with the bot token from
+      `~/.claude/agentic-config.local.json`. **Nobody replied and nobody
+      reacted.** The announcement sits at 2026-08-21 23:39 UTC from
+      `Agentience Bot`; the only human message after it is unrelated (see
+      *Open loops* below). So there is no outside feedback and no bug report
+      waiting — the plugin still has exactly one user. Note for whoever checks
+      next: **the `discord-notify` skill only sends.** Reading needs a direct
+      `GET https://discord.com/api/v10/channels/<id>/messages?limit=N` with
+      `Authorization: Bot <token>`; the token is under
+      `integrations.discord.botToken` in the home-level local overlay.
 - [ ] Optional: **v0.2 — the reverse jump.** A key inside the editor that raises
       the Herdr pane for that repo. The plugin was named `ide-jump` rather than
       `back-to-ide` specifically so this lands inside it rather than needing a
@@ -330,6 +340,17 @@ list` prints window titles.
 - **`min_herdr_version = "0.7.4"`** without a reason. That is the release whose
   changelog adds popup plugin panes. It has only ever been run on 0.8.2.
 
+## Open loops with others
+
+**Not this project's work, but discovered while checking Discord and it is
+waiting on Troy.** On 2026-08-23 19:36 UTC `patweb99` asked in `sanvio`:
+"Hey, mind reviewing my blog post here? Thanks!" with a Substack preview link
+(`sanviolabs.substack.com/p/2c67573e-b8d8-4838-af06-af7da4747e68`). Nobody has
+answered it. Flagged here only so it is not lost — it has nothing to do with
+ide-jump, and this session did not act on it.
+
+No AMQ traffic occurred; there is no `## AMQ coordination` section.
+
 ## Window slug
 
 `ide-jump-install-test`
@@ -439,3 +460,20 @@ list` prints window titles.
   the plugin exists. Window slug moved from `ide-jump-publish` to
   `ide-jump-install-test`, since publishing is finished and the install-path
   test is what remains.
+
+- 2026-08-24 09:14 — Read-mode session. **Both non-gated items closed.**
+  *Discord*: read the last 25 messages in `sanvio` off the Discord API — the
+  announcement drew **no reply and no reaction**, so there is still no outside
+  feedback and no first-user bug report. Recorded how to read a channel, since
+  the `discord-notify` skill only sends and the next person will hit that too.
+  *Screenshot*: Troy had already re-cropped `jump-popup.jpg` at 09:00, after the
+  previous entry described it as 1000x839 — it was 517x416 by the time this
+  session opened it, but still had terminal bleed on both edges and ~40% empty
+  black below the rows. Cropped tight to the popup box, closed the box with a
+  redrawn border, and saved `docs/jump-popup.png` (472x242, native resolution —
+  a 2x upscale was tried first and looked soft against the JPEG artefacts).
+  Referenced it from the README under the opening paragraph. Also surfaced an
+  unrelated ask sitting in that Discord channel since 2026-08-23 — patweb99
+  wants a blog post reviewed — under a new *Open loops with others* section.
+  **Nothing committed**; the install-path test is untouched and still wants
+  Troy's word.

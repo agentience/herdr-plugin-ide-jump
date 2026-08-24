@@ -1,10 +1,12 @@
 # IDE Jump — a Herdr plugin
 
-**Last Updated: 2026-08-21 16:15**
+**Last Updated: 2026-08-24 09:12**
 
 Get back to your IDE. From a [Herdr](https://herdr.dev) pane, one key raises
 the editor window for *that pane's project* — no leaving the keyboard, no
 hunting through a Mission Control grid of ten identical editor windows.
+
+![The pick popup, listing every open editor window with the focused pane's project already selected](docs/jump-popup.png)
 
 Two gestures, which in the ordinary case do the same thing:
 
