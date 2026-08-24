@@ -18,7 +18,16 @@ import subprocess
 
 def _run(cmd):
     try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+        # encoding is explicit: text=True alone decodes with the locale codec,
+        # which is cp1252 on a Windows install in most of the world, while Herdr
+        # and git both emit UTF-8. `pane current` carries the pane's terminal
+        # title, so any accent or spinner glyph a user has on screen is enough
+        # to raise UnicodeDecodeError -- inside subprocess's reader THREAD, so
+        # the traceback prints but the except below still sees an empty result.
+        # That failure mode is silent and total: every cwd signal becomes "",
+        # taking path matching and cold start with it.
+        r = subprocess.run(cmd, capture_output=True, timeout=5,
+                           encoding="utf-8", errors="replace")
         return r.stdout.strip() if r.returncode == 0 else ""
     except Exception:
         return ""
@@ -76,13 +85,53 @@ def _focused_pane_cwd():
     if not data:
         return ""
     try:
-        # foreground_cwd, never cwd: Herdr CONSUMES OSC 7 from a pane and writes
-        # the reported directory into `cwd`, so `cwd` is only as fresh as the
-        # last OSC 7 that pane saw. `foreground_cwd` is read from the foreground
-        # process and is right whether or not any shell emits OSC 7 at all.
-        return data["result"]["pane"]["foreground_cwd"] or ""
+        pane = data["result"]["pane"]
     except Exception:
         return ""
+    # foreground_cwd in preference to cwd: Herdr CONSUMES OSC 7 from a pane and
+    # writes the reported directory into `cwd`, so `cwd` is only as fresh as the
+    # last OSC 7 that pane saw. `foreground_cwd` is read from the foreground
+    # process and is right whether or not any shell emits OSC 7 at all.
+    #
+    # But it is not always THERE. Windows builds omit the key entirely (measured
+    # on 0.8.x: `pane current` returns cwd and no foreground_cwd), and indexing
+    # it directly raised into the caller's except and returned "" -- so every
+    # cwd-derived signal vanished on this platform without a word, taking cold
+    # start and the non-label half of project resolution with it. Falling back
+    # to `cwd` gives up the freshness guarantee and gets the feature back.
+    return pane.get("foreground_cwd") or pane.get("cwd") or ""
+
+
+def resolve_root():
+    """Best directory to OPEN for the current invocation, or "".
+
+    resolve_project() answers a different question and stops as soon as it can:
+    a workspace label is enough to match a window title, which is all the
+    matching path ever needed, so it returns that label with an empty root and
+    never looks at a cwd. Opening the project needs a real directory, and
+    "" silently means "do not open" -- so on a Herdr workspace that HAS a label,
+    which is the ordinary case, cold start could never fire. This walks the cwd
+    signals regardless of whether a label already answered.
+
+    MUST NOT be called from the picker popup. `pane current` reports the FOCUSED
+    pane, which is the popup itself once it is up, and Herdr runs plugin
+    commands with the plugin directory as their cwd -- so the answer there is
+    this plugin's own folder, and the editor would open on it. The caller that
+    has the real context is the action; it forwards the result as IDE_JUMP_ROOT.
+    """
+    ctx = invocation_context()
+    candidates = [_focused_pane_cwd(),
+                  ctx.get("focused_pane_cwd") or "",
+                  ctx.get("workspace_cwd") or ""]
+    for c in candidates:
+        root = _git_root(c)
+        if root:
+            return root
+    # Not a repo, but a directory is still better than not opening at all.
+    for c in candidates:
+        if c and os.path.isdir(c):
+            return c
+    return ""
 
 
 def resolve_project():

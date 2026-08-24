@@ -26,9 +26,9 @@ exits with an error when there are no editor windows at all.
 So: bind **pick** for everyday use, and add **jump** if you want the cold-start
 behaviour or prefer one keystroke to two. Neither is a fallback for the other.
 
-macOS only today. The window-manager surface is deliberately two operations
-wide — enumerate windows, raise one — so a port is one new module; see
-`idejump/backends/__init__.py` for what X11 and Wayland would each need.
+macOS and Windows today. The window-manager surface is deliberately two
+operations wide — enumerate windows, raise one — so a port is one new module;
+see `idejump/backends/__init__.py` for what X11 and Wayland would each need.
 
 ## Install
 
@@ -59,7 +59,9 @@ which is the step that actually makes the plugin do something.
   `peco` or `gum`: the picker is standard library only, so there is nothing to
   install alongside it.
 - **macOS**, and **Accessibility permission for the terminal application
-  running Herdr** (System Settings → Privacy & Security → Accessibility).
+  running Herdr** (System Settings → Privacy & Security → Accessibility), **or
+  Windows 10/11**, which needs no permission grant — the backend is `user32`
+  through `ctypes`.
   Without it the accessibility API returns no windows at all, and both gestures
   fail the same way they would if they were never bound — silently. Grant it
   before concluding anything is broken.
@@ -163,8 +165,30 @@ Set `window.title` in the editor to include the workspace root:
 
 `"${rootName}${separator}${activeEditorShort}"` also works — the matcher takes
 the head of the title before an em dash, en dash, or ` - ` separator, so a
-suffix like ` — Modified` or ` — 1 problem in this file` does not break it.
-What does not work is a title that leads with the filename.
+suffix like ` — Modified` or ` — 1 problem in this file` does not break it. A
+title that leads with the filename works too, as long as the root name is one
+of the separated segments — which is what VS Code's Windows default,
+`${activeEditorShort}${separator}${rootName}${separator}${appName}`, produces.
+
+### If several projects share a folder name, use the path
+
+`${rootName}` is a folder name, and folder names repeat. Git worktrees are the
+usual way to end up there: a checkout laid out as `<repo>/<branch>` names every
+worktree after its branch, so `master` is the folder name under every repo on
+the machine — and every one of those windows matches every one of those
+projects. Nothing can separate them, because the titles are identical strings.
+
+Put the path in the title instead:
+
+```json
+{ "window.title": "${dirty}${activeEditorShort}${separator}${rootPath}${separator}${appName}" }
+```
+
+The matcher tries the path first and falls back to the name, so this is worth
+setting only if you have collisions. Paths are compared with `/` and `\`
+folded together and with a boundary check, so `…/master` does not match
+`…/master-old`. The picker still shows the last two components — `paas/master`,
+`gestao/master` — rather than the whole path.
 
 ## How it decides which project you meant
 
