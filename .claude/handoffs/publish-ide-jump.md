@@ -1,6 +1,6 @@
 # Publishing ide-jump
 
-**Last Updated: 2026-08-24 09:32**
+**Last Updated: 2026-08-24 09:40**
 
 `agentience.ide-jump` is a Herdr plugin that gets you back to your IDE: one key
 raises the editor window for the focused pane's project, another opens a
@@ -8,10 +8,10 @@ filterable popup already sitting on that project. It is **built, linked,
 published, and confirmed indexed in the marketplace** — Troy's `prefix+alt+c`
 and `ctrl+shift+w` both route through it live on this machine. **Every required
 item is now closed** — including the install path, exercised end to end from
-GitHub on 2026-08-24 and then reverted to the local link. **The live question is
-now PR #1**, a Windows backend from the first outside contributor: verified
-green on macOS 2026-08-24, but it carries one deliberate behaviour change to
-`pick` that is Troy's call. See *Decisions needed*.
+GitHub on 2026-08-24 and then reverted to the local link. **PR #1 — a Windows backend from
+the first outside contributor — was reviewed, macOS-verified, approved and
+merged 2026-08-24**, so the plugin is macOS + Windows now. What is left is two
+optional features and one standing decision that is not urgent.
 
 It was built inside the IFTI repo's session on 2026-08-21 and handed over here
 because the work is no longer about IFTI. The originating document is
@@ -42,32 +42,6 @@ down. Read it only for the Herdr-adoption context around it.
   points at the PNG.
 
 ## Decisions needed
-
-**PR #1 changes what `pick` does when nothing matches — accept or ask for it to
-be dropped.** Today `pick` shows the list with an unrelated first row
-preselected; the PR makes it run `open_command` and open the project instead,
-falling back to the list only when opening fails. The README currently states
-the opposite in as many words ("neither is a fallback for the other"), and that
-wording was written deliberately on 2026-08-21 after checking the code.
-
-The contributor argues the current behaviour is the real failure — the gesture
-means "get me to *this* project's editor" and every row on offer is the wrong
-project — and **offered to drop it**, noting it is self-contained in
-`cmd_picker`. Verified on macOS 2026-08-24: the open fires, the window count
-goes 6 → 7, and every fallback branch behaves (open fails → list, exactly as
-before; empty root → never opens, guarded in `open_missing`).
-
-- **Accept it.** *Recommendation.* It makes `pick` a superset of `jump`, which
-  is where the two gestures were already converging — the 2026-08-21 note kept
-  `jump` only because it was the sole cold-start path, and this removes that
-  asymmetry. Requires a README edit, since the README would then be wrong.
-- **Ask for it to be dropped.** Keeps the documented split and shrinks the PR to
-  the Windows port plus the shared fixes. Costs a round trip with the
-  contributor.
-
-Whichever way it goes, **the README must be updated in the same commit** — it
-currently documents the old behaviour explicitly, and this is the one place the
-PR makes the docs wrong.
 
 **Whether to drop osascript for the accessibility API directly.** Raised
 2026-08-21 when Troy asked why the plugin is Python when Herdr is Rust. The
@@ -113,6 +87,14 @@ blocker, and a weaker one than it was: the prize shrank from ~650ms recovered
 to well under that.
 
 ## Decisions resolved
+
+**Whether to accept PR #1's change to `pick` — settled 2026-08-24: accept.**
+Troy: "the pick change is a nice addition." `pick` now runs `open_command` when
+nothing matches instead of listing other projects' windows, falling back to the
+list only when opening is impossible and other windows exist. This **ends the
+pick/jump split** the README used to draw — both gestures handle cold start now,
+and the difference is one keypress and whether there is a popup. README and
+CHANGELOG updated to match in `2d0aaa3`; do not reintroduce the old wording.
 
 **Which GitHub account owns the repo — settled 2026-08-21: the `agentience`
 org**, not `tmolander` as this document previously recommended. Troy chose it
@@ -193,44 +175,43 @@ Nothing else is open.
       **Config survives the round trip** — `herdr plugin config-dir` reported
       `~/.config/herdr/plugins/config/agentience.ide-jump` before, during and
       after, because it keys on the plugin id, not the source.
-- [ ] **(in progress)** **PR #1 — Windows backend from `tiagoaquino`.**
-      https://github.com/agentience/herdr-plugin-ide-jump/pull/1, opened
-      2026-08-22, +813/-94 across 8 files. The first outside contribution.
-      **macOS regression-verified 2026-08-24 09:25–09:32; the only thing
-      blocking a merge is the `pick` decision above.**
-      Checked out as a worktree at `../ide-jump-pr1` on branch `pr-1-windows`,
-      **deliberately not in this directory** — this one is what
-      `herdr plugin link` points at, so checking the PR out here would put
-      untested code under Troy's live keybindings.
-      What was verified on this Mac:
-      `list` output byte-identical to main; `find_index`/`preselect_index`
-      differential-tested across all six real window titles plus three
-      negatives — **zero divergence**, so the new path- and segment-matching
-      rules are inert on `${rootName}` titles as the author claimed; perf
-      **297ms median vs main's 313ms**, interleaved, 5 runs each, so the 298ms
-      floor holds; `jump` through Herdr exit 0 in 630ms with `match=0`; the
-      popup pane launched under Herdr with a working `/dev/tty` and the right
-      preselect; `termios` confirmed **not** imported at module scope while
-      the module still imports on darwin; and the PR merges into current `main`
-      cleanly with the `docs/jump-popup.png` README line intact.
-      Two shared changes are real fixes that apply to macOS, not just Windows:
-      **`resolve_root()`** — `why` on main prints `root: (none)` on a labelled
-      workspace and the PR prints the actual path, confirming cold start could
-      never fire; and **explicit UTF-8** on `_run`, the log file and the picker
-      console.
-      Not verified, and cannot be from here: **anything Windows.** The author
-      tested on Windows 11 / Herdr 0.8.x / VS Code. Taking that on trust is the
-      whole of the risk in merging, and it is contained — `windows.py` is only
-      reachable under `sys.platform == "win32"`.
-      **Next step: settle the `pick` divergence** (see *Decisions needed*),
-      then merge. Remember to `git worktree remove ../ide-jump-pr1` and delete
-      the local `pr-1-windows` branch afterwards.
+- [x] **PR #1 — Windows backend from `tiagoaquino`. Merged 2026-08-24 16:37Z
+      as `d9ef5fe`** (squash; author attribution preserved as Tiago Aquino).
+      +813/-94, the first outside contribution. Reviewed by reading the diff,
+      regression-tested on this Mac in a throwaway worktree so the live link
+      kept pointing at `main`, approved with the test results in the review
+      body, merged, then `2d0aaa3` fixed the README and CHANGELOG. Worktree and
+      local branch removed. The plugin is **macOS + Windows** now.
+      What macOS verification consisted of, should anything surface later:
+      `list` byte-identical to pre-merge; `find_index`/`preselect_index`
+      differential-tested across all six real window titles plus negatives with
+      **zero divergence**; perf **297ms vs 313ms** interleaved, so the 298ms
+      floor held; `jump` and the popup pane green through Herdr; `termios`
+      confirmed absent from `sys.modules` after importing `idejump.picker` on
+      darwin; the no-match open path exercised end to end (window count 6 → 7)
+      with both fallbacks checked. Re-verified after the merge landed under the
+      live link: `plugin-log-62`, exit 0, 849ms, `match=0`.
+      Two of its shared changes were **macOS bug fixes, not Windows work**:
+      `resolve_root()` (cold start was unreachable on a labelled workspace —
+      `why` printed `root: (none)`) and explicit UTF-8 decoding.
+      **The Windows half is unverified here and there is no CI.** Tiago is the
+      only person running that backend; he has been asked to open issues rather
+      than assume his setup is at fault.
 - [ ] Optional: **v0.2 — the reverse jump.** A key inside the editor that raises
       the Herdr pane for that repo. The plugin was named `ide-jump` rather than
       `back-to-ide` specifically so this lands inside it rather than needing a
       second plugin. Herdr side is `herdr pane focus`/`workspace` over
       `HERDR_BIN_PATH`; the editor side is a VS Code task or keybinding, which
       is the unresearched half.
+- [ ] Optional but newly worth it: **a CI workflow.** There is none, so this
+      Mac is the entire test suite — PR #1 was regression-tested by hand, and
+      the next one will cost the same unless something automates the cheap part.
+      Minimum useful: `python -m compileall`, an import check asserting
+      `termios` is NOT in `sys.modules` after importing `idejump.picker` (the
+      trap PR #1 documented, and the one a Windows contributor is most likely to
+      re-break), and the `find_index` table test against a fixed list of titles.
+      None of that needs a real window server, so it runs on any runner. Window
+      enumeration and raising cannot be tested in CI on either platform.
 - [ ] Optional: **X11 backend.** `windowswitch`-era notes live in
       `idejump/backends/__init__.py`: `wmctrl -l` to enumerate, `wmctrl -i -a`
       to raise. Wayland is deliberately out — no standard raise API, and the
@@ -386,8 +367,9 @@ list` prints window titles.
   679ms, `match=0`), re-link verified (`plugin-log-59`, 751ms, `match=0`).
   Details and the two gotchas are on the work item.
 
-- **PR #1 against macOS — verified 2026-08-24 09:25–09:32**, in a worktree at
-  `../ide-jump-pr1`, never under the live link. Enumeration identical, matching
+- **PR #1 against macOS — verified 2026-08-24 09:25–09:32 and MERGED**, first
+  in a worktree at `../ide-jump-pr1` and then again under the live link once
+  `d9ef5fe` landed (`plugin-log-62`, exit 0, 849ms, `match=0`). Enumeration identical, matching
   differential-tested to zero divergence, no perf regression (297ms vs 313ms),
   `jump` and the popup pane both green through Herdr, merges clean. Detail on
   the work item.
@@ -396,9 +378,11 @@ list` prints window titles.
 - **Anything on a non-macOS platform.** There is no other backend.
 - **Kiro's `raise`.** Enumeration was verified against Kiro; raising a Kiro
   window was not.
-- **The whole of PR #1's Windows path.** No Windows machine here. Trusting the
-  contributor's report is the only risk in merging, and `windows.py` is
-  unreachable off `win32`.
+- **The whole of PR #1's Windows path — and it is now MERGED and shipping.**
+  No Windows machine here, and no CI. `windows.py` is unreachable off `win32`,
+  so it cannot hurt a macOS user, but the manifest advertises Windows and the
+  marketplace will list it that way. Tiago's Windows 11 / Herdr 0.8.x / VS Code
+  run is the only evidence it works.
 
 ## Don't touch
 
@@ -422,7 +406,7 @@ No AMQ traffic occurred; there is no `## AMQ coordination` section.
 
 ## Window slug
 
-`ide-jump-pr1-windows`
+`ide-jump-ci-and-v02`
 
 ## Progress log
 
@@ -581,3 +565,19 @@ No AMQ traffic occurred; there is no `## AMQ coordination` section.
   listing, which contradicts the README; verified working with all fallbacks
   intact, written up under *Decisions needed* with a recommendation to accept.
   Live plugin re-linked to `main` and re-verified (`plugin-log-61`, 615ms).
+
+- 2026-08-24 09:40 — **PR #1 merged; the plugin supports Windows.** Troy accepted
+  the `pick` behaviour change ("a nice addition"), so: approved the PR with the
+  macOS test results in the review body and an answer to the contributor's
+  standing question, squash-merged as `d9ef5fe` with authorship preserved, then
+  pushed `2d0aaa3` fixing the README — which still described `jump` as "the only
+  path that handles the editor isn't up yet" and `pick` as opening "on an
+  unrelated first row" — plus two stale lines the merge left behind. Pulled and
+  re-verified the live plugin now that the linked working tree IS the merged
+  code. Worktree and local branch removed; working tree clean apart from the
+  untracked `jump-popup.jpg`. Commented on the PR to close the loop and told
+  Tiago to file issues rather than assume his own setup, since he is the only
+  person running the Windows backend. **Added a CI work item** — this Mac being
+  the only test suite was survivable for one PR and will not stay that way, and
+  the cheap half (compile, the deferred-`termios` assertion, the `find_index`
+  table) needs no window server. Slug moved to `ide-jump-ci-and-v02`.
