@@ -1,16 +1,16 @@
 # Publishing ide-jump
 
-**Last Updated: 2026-08-24 09:14**
+**Last Updated: 2026-08-24 09:18**
 
 `agentience.ide-jump` is a Herdr plugin that gets you back to your IDE: one key
 raises the editor window for the focused pane's project, another opens a
 filterable popup already sitting on that project. It is **built, linked,
 published, and confirmed indexed in the marketplace** — Troy's `prefix+alt+c`
-and `ctrl+shift+w` both route through it live on this machine. The screenshot
-is cropped and in the README, and the Discord channel has been checked — no
-replies. **One required item remains: the install-path test**, which is gated
-on Troy's go-ahead because it briefly unlinks his live plugin. There are also
-uncommitted README + screenshot changes sitting in the working tree.
+and `ctrl+shift+w` both route through it live on this machine. **Every required
+item is now closed** — including the install path, exercised end to end from
+GitHub on 2026-08-24 and then reverted to the local link. What is left is two
+optional features (v0.2 reverse jump, X11 backend) and one standing decision
+that is not urgent.
 
 It was built inside the IFTI repo's session on 2026-08-21 and handed over here
 because the work is no longer about IFTI. The originating document is
@@ -34,10 +34,11 @@ down. Read it only for the Herdr-adoption context around it.
   of that file are at `~/.config/herdr/config.toml.bak.*`; the two scripts the
   plugin replaced (`~/.claude/scripts/herdr-code-window.sh` and
   `vscode-window-switch.py`) are untouched on disk, so a revert is one `cp`.
-- **The working tree is dirty as of 2026-08-24 09:14** and nothing has been
-  committed this session: `docs/jump-popup.png` (new), `README.md` (screenshot
-  reference + date), this handoff, and the untracked source `jump-popup.jpg` at
-  the repo root. Commit the first three; leave or delete the JPEG.
+- **`ff5193b` is HEAD and is pushed** (2026-08-24 09:15) — adds
+  `docs/jump-popup.png` and the README reference. The only thing left in the
+  working tree is the untracked source `jump-popup.jpg` at the repo root, kept
+  deliberately as the uncropped original; delete it or leave it, but the README
+  points at the PNG.
 
 ## Decisions needed
 
@@ -129,46 +130,42 @@ Nothing else is open.
       stale clone). Manifest parsed completely — id, name, version,
       `minHerdrVersion`, platforms, description all present. Catalogue is now
       762 plugins; the listing has 1 star.
-- [ ] **Decide whether to keep the local link or switch to the installed copy.**
-      Installing over a locally linked plugin is **refused** — it needs
-      `herdr plugin unlink agentience.ide-jump` first. Keeping the link is the
-      better development posture; switch only to test the install path end to
-      end, and re-link afterwards.
-- [ ] **Test the install path once from a clean state**, ideally after
-      unlinking: `herdr plugin install agentience/herdr-plugin-ide-jump`. There
-      are no `[[build]]` commands, so install is a clone plus registration —
-      but it has never been exercised.
-      **Doubly unblocked now** — the keypress check passed 2026-08-21 16:35
-      *and* the repo is confirmed in the marketplace index. Still worth doing
-      deliberately: unlinking swaps the live plugin out from under Troy's
-      working keybindings, so re-link immediately afterwards
-      (`herdr plugin link <this dir>`) and confirm with `herdr plugin list`.
-      Troy has not yet said to go ahead. **Next actionable step for a fresh
-      session, pending Troy's word.**
-- [x] **Crop and land the picker screenshot in the README.** Done 2026-08-24
-      09:12. Troy had already re-cropped `jump-popup.jpg` to 517x839 -> 517x416
-      by 09:00, after the previous entry was written, but it still carried
-      terminal bleed on both edges and ~40% empty black below the six rows.
-      Cropped tight to the popup box (x 33-488, y 26-252 of that file), closed
-      the box with a redrawn border, added an 8px margin, and saved as PNG at
-      native resolution -- `docs/jump-popup.png`, 472x242. Referenced from the
-      README directly under the opening paragraph, with alt text naming what it
-      demonstrates (the preselected row). README **Last Updated** bumped. The
-      source `jump-popup.jpg` is left untracked at the repo root; delete it or
-      leave it, but do not commit it -- `docs/jump-popup.png` is the one the
-      README points at. **Not yet committed.**
-- [x] **Check the `sanvio` Discord channel (id `1523531109101600851`) for
-      replies.** Checked 2026-08-24 09:10 by reading the last 25 messages
-      straight off the Discord API with the bot token from
-      `~/.claude/agentic-config.local.json`. **Nobody replied and nobody
-      reacted.** The announcement sits at 2026-08-21 23:39 UTC from
-      `Agentience Bot`; the only human message after it is unrelated (see
-      *Open loops* below). So there is no outside feedback and no bug report
-      waiting — the plugin still has exactly one user. Note for whoever checks
-      next: **the `discord-notify` skill only sends.** Reading needs a direct
-      `GET https://discord.com/api/v10/channels/<id>/messages?limit=N` with
-      `Authorization: Bot <token>`; the token is under
-      `integrations.discord.botToken` in the home-level local overlay.
+- [x] **Decide whether to keep the local link or switch to the installed copy.**
+      Settled 2026-08-24 09:17: **keep the local link.** The install path is now
+      proven, so there is nothing left that the installed copy tests, and the
+      link is the better development posture. Working tree is linked again and
+      verified.
+- [x] **Test the install path once from a clean state.** Done 2026-08-24
+      09:15–09:17, whole cycle, machine returned to its starting state. What
+      happened:
+      `herdr plugin unlink agentience.ide-jump` → `{"removed":true}`;
+      `herdr plugin install agentience/herdr-plugin-ide-jump -y` → **exit 0**,
+      resolved `commit ff5193b`, printed a preview listing 2 actions, 1 pane and
+      **0 build commands**, and registered as
+      `[github:agentience/herdr-plugin-ide-jump@ff5193ba…]` with the id
+      `agentience.ide-jump` — the id Troy's keybindings name, so they kept
+      working untouched. The clone landed at
+      `~/.config/herdr/plugins/github/agentience.ide-jump-<hash>/`, complete
+      (`idejump/`, `examples/`, `docs/`, manifest), and `python3 ide_jump.py
+      list` ran from it. `herdr plugin action invoke …jump` against the
+      installed copy: `plugin-log-58`, **exit 0 in 679ms**, plugin log
+      `match=0` — resolved via `plugin context workspace_label` and raised the
+      right window. Then re-linked and re-verified: `plugin-log-59`, exit 0,
+      751ms, `match=0`.
+      **Two things learned, both new:**
+      1. **`herdr plugin link <dir>` over an *installed* plugin just works** and
+         silently replaces the registration — no unlink needed. That is the
+         reverse of the documented direction (install over a *linked* plugin is
+         refused), so the asymmetry is real: link wins, install does not.
+      2. **Uninstall is therefore never reached, and it leaves the clone behind.**
+         `herdr plugin uninstall agentience.ide-jump` was rejected with a bare
+         `usage:` line, and after re-linking there was no registry entry pointing
+         at the clone at all — 456K orphaned on disk. Deleted by hand after
+         confirming nothing under `~/.config/herdr` or `~/.local/state/herdr`
+         referenced it. **If you run this test again, clean up that directory.**
+      **Config survives the round trip** — `herdr plugin config-dir` reported
+      `~/.config/herdr/plugins/config/agentience.ide-jump` before, during and
+      after, because it keys on the plugin id, not the source.
 - [ ] Optional: **v0.2 — the reverse jump.** A key inside the editor that raises
       the Herdr pane for that repo. The plugin was named `ide-jump` rather than
       `back-to-ide` specifically so this lands inside it rather than needing a
@@ -324,9 +321,13 @@ list` prints window titles.
   `firstSeenAt: 2026-08-22T11:31:22Z`; the index build tracks `headCommit
   5cd969f`, and the manifest parsed in full.
 
+- **`herdr plugin install` from GitHub — verified 2026-08-24 09:15–09:17.**
+  Full unlink → install → invoke → re-link cycle against `ff5193b`. Install
+  exit 0, clone complete, action ran from the installed copy (`plugin-log-58`,
+  679ms, `match=0`), re-link verified (`plugin-log-59`, 751ms, `match=0`).
+  Details and the two gotchas are on the work item.
+
 **NOT verified — do not assume:**
-- **`herdr plugin install` from GitHub.** Never run. Nothing blocks it now —
-  see the work item, which wants Troy's go-ahead rather than a fix.
 - **Anything on a non-macOS platform.** There is no other backend.
 - **Kiro's `raise`.** Enumeration was verified against Kiro; raising a Kiro
   window was not.
@@ -353,7 +354,7 @@ No AMQ traffic occurred; there is no `## AMQ coordination` section.
 
 ## Window slug
 
-`ide-jump-install-test`
+`ide-jump-v02-reverse`
 
 ## Progress log
 
@@ -477,3 +478,18 @@ No AMQ traffic occurred; there is no `## AMQ coordination` section.
   wants a blog post reviewed — under a new *Open loops with others* section.
   **Nothing committed**; the install-path test is untouched and still wants
   Troy's word.
+
+- 2026-08-24 09:18 — **Install path tested and the plugin is feature-complete
+  for v0.1.** Committed and pushed `ff5193b` (the cropped screenshot plus its
+  README reference), then ran the full cycle Troy authorised: unlink → install
+  from `agentience/herdr-plugin-ide-jump` → invoke `jump` against the installed
+  copy → uninstall → re-link this working tree → invoke again. Both invocations
+  exit 0 with `match=0`, 679ms installed and 751ms linked. Machine is back
+  exactly where it started: linked to the working tree, same config dir, and the
+  orphaned 456K clone the test left in `~/.config/herdr/plugins/github/` removed
+  by hand. Two undocumented behaviours found and written onto the work item —
+  `plugin link` silently overrides an installed plugin (the reverse of install,
+  which refuses), and because of that `uninstall` is never reached, so the clone
+  is orphaned rather than cleaned. Slug moved `ide-jump-install-test` →
+  `ide-jump-v02-reverse`: only optional work remains, and the reverse jump is the
+  next thing anyone would pick up.
