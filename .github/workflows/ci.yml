@@ -1,0 +1,109 @@
+name: CI
+
+# What this can and cannot cover.
+#
+# The plugin's job -- enumerate an editor's windows and raise one -- needs a
+# real desktop with a real editor on it, and no CI runner has that. So this
+# tests the half that is pure logic, plus the import shape of the half that is
+# not. That split is not a compromise: every regression the project has actually
+# shipped or nearly shipped was in one of those two places. Matching rules
+# accumulate one per platform port and risk firing where they should not, and a
+# module-scope `import termios` is correct on macOS while making the module
+# unimportable on Windows.
+#
+# Windows is in the matrix for one reason worth the minutes: `idejump.backends.
+# windows` cannot be imported anywhere else -- `ctypes.WinDLL` does not exist
+# off Windows -- so without a Windows runner nothing at all checks it, and the
+# maintainer has no Windows machine.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.os }} · py${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # ubuntu is not a supported runtime platform -- there is no X11 backend
+        # yet -- but it runs the pure-logic tests for free and is where a
+        # future X11 port would land.
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        # The plugin runs under whatever `python3` the user already has, so the
+        # floor matters as much as the ceiling. No f-strings, no walrus: the
+        # source is deliberately conservative and this is what keeps it that way.
+        python: ["3.9", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Byte-compile everything
+        # Catches syntax errors on the oldest Python in the matrix, including
+        # in modules this platform cannot import.
+        run: python -m compileall -q ide_jump.py idejump tests
+
+      - name: Tests
+        run: python -m unittest discover -s tests -v
+
+  no-dependencies:
+    # The plugin's best property is that `herdr plugin install` is a clone and
+    # nothing else: no build step, no toolchain, nothing to go stale. That holds
+    # only while the source imports nothing outside the standard library, and
+    # the way it stops holding is one convenient import in a PR.
+    name: standard library only
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: No third-party imports
+        run: |
+          python - <<'PY'
+          import ast, pathlib, sys
+
+          # Anything importable without pip on a bare CPython. Platform modules
+          # are included: they are stdlib, and the tests police WHERE they are
+          # imported, which is the part that actually matters.
+          stdlib = set(sys.stdlib_module_names)
+          bad = []
+          for path in sorted(pathlib.Path(".").glob("**/*.py")):
+              if ".github" in path.parts:
+                  continue
+              tree = ast.parse(path.read_text(encoding="utf-8"), str(path))
+              for node in ast.walk(tree):
+                  if isinstance(node, ast.Import):
+                      names = [a.name for a in node.names]
+                  elif isinstance(node, ast.ImportFrom):
+                      # level > 0 is a relative import, i.e. our own package.
+                      names = [node.module] if node.module and not node.level else []
+                  else:
+                      continue
+                  for name in names:
+                      root = name.split(".")[0]
+                      if root in ("idejump", "tests") or root in stdlib:
+                          continue
+                      bad.append("{}:{} imports {!r}".format(path, node.lineno, name))
+          if bad:
+              print("Third-party imports found. The plugin must stay "
+                    "standard-library only -- that is what makes install a "
+                    "clone with no build step.\n")
+              print("\n".join(bad))
+              sys.exit(1)
+          print("standard library only: ok")
+          PY
