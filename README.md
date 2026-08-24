@@ -1,6 +1,8 @@
 # IDE Jump — a Herdr plugin
 
-**Last Updated: 2026-08-24 09:38**
+[![CI](https://github.com/agentience/herdr-plugin-ide-jump/actions/workflows/ci.yml/badge.svg)](https://github.com/agentience/herdr-plugin-ide-jump/actions/workflows/ci.yml)
+
+**Last Updated: 2026-08-24 09:47**
 
 Get back to your IDE. From a [Herdr](https://herdr.dev) pane, one key raises
 the editor window for *that pane's project* — no leaving the keyboard, no

@@ -1,6 +1,6 @@
 # Publishing ide-jump
 
-**Last Updated: 2026-08-24 09:40**
+**Last Updated: 2026-08-24 09:48**
 
 `agentience.ide-jump` is a Herdr plugin that gets you back to your IDE: one key
 raises the editor window for the focused pane's project, another opens a
@@ -203,15 +203,40 @@ Nothing else is open.
       second plugin. Herdr side is `herdr pane focus`/`workspace` over
       `HERDR_BIN_PATH`; the editor side is a VS Code task or keybinding, which
       is the unresearched half.
-- [ ] Optional but newly worth it: **a CI workflow.** There is none, so this
-      Mac is the entire test suite — PR #1 was regression-tested by hand, and
-      the next one will cost the same unless something automates the cheap part.
-      Minimum useful: `python -m compileall`, an import check asserting
-      `termios` is NOT in `sys.modules` after importing `idejump.picker` (the
-      trap PR #1 documented, and the one a Windows contributor is most likely to
-      re-break), and the `find_index` table test against a fixed list of titles.
-      None of that needs a real window server, so it runs on any runner. Window
-      enumeration and raising cannot be tested in CI on either platform.
+- [x] **CI, and the project's first tests.** Landed 2026-08-24 09:46 in
+      `c84a305`; **all 7 jobs green on the first run**
+      (`.github/workflows/ci.yml`). 31 tests, standard-library `unittest`, no
+      new dependency — run with `python3 -m unittest discover -s tests`.
+      Matrix is Linux + macOS + Windows against Python **3.9 and 3.13**; the
+      floor is 3.9 because the source is deliberately conservative (no
+      f-strings, no walrus) and nothing else was enforcing that.
+      **What it covers, and what it cannot.** Enumerating and raising windows
+      needs a real desktop with a real editor and stays untestable — that is
+      permanent, not a gap to close. What CI owns is the two places regressions
+      have actually come from: the **ranked title-matching rules**
+      (`tests/test_matching.py`, incl. every collision that motivated a rule)
+      and the **import shape** (`tests/test_platform.py` — a standing assertion,
+      in a fresh subprocess, that importing `idejump.picker` does not pull in
+      `termios`, which is the exact trap PR #1 fixed and the one a Windows
+      contributor is likeliest to re-break; the failure message names the fix).
+      **The suite was mutation-checked rather than assumed.** Dropping the root
+      ranking → 2 failures; substring instead of whole-segment matching → 1;
+      returning 0 instead of -1 for no match → 4; dropping the path boundary
+      check → 1; reinstating the module-scope `import termios` → 1. A green
+      suite here means something.
+      **Windows is in the matrix for one specific reason** and it paid off
+      immediately: `idejump.backends.windows` cannot be imported anywhere else
+      (`ctypes.WinDLL` does not exist off Windows), so nothing checked it at
+      all. Verified from the run log that those tests **ran rather than
+      skipped** — `test_module_imports_and_binds` and
+      `test_enumeration_runs_without_raising` both `ok` on windows-latest, so
+      `EnumWindows`, the callback and the filter have now executed on a real
+      Windows machine. That is the **first automated verification Tiago's
+      backend has ever had**, and it partly closes the "shipping code nobody
+      here can run" risk. Raising a window is never called.
+      A separate `no-dependencies` job fails the build on any third-party
+      import, because clone-and-go install is the plugin's best property and it
+      holds only while that stays true.
 - [ ] Optional: **X11 backend.** `windowswitch`-era notes live in
       `idejump/backends/__init__.py`: `wmctrl -l` to enumerate, `wmctrl -i -a`
       to raise. Wayland is deliberately out — no standard raise API, and the
@@ -374,12 +399,18 @@ list` prints window titles.
   `jump` and the popup pane both green through Herdr, merges clean. Detail on
   the work item.
 
+- **CI green on all 7 jobs, 2026-08-24 09:46**, run `32752721036`. The
+  Windows-only tests were confirmed to have *run*, not skipped.
+
 **NOT verified — do not assume:**
 - **Anything on a non-macOS platform.** There is no other backend.
 - **Kiro's `raise`.** Enumeration was verified against Kiro; raising a Kiro
   window was not.
-- **The whole of PR #1's Windows path — and it is now MERGED and shipping.**
-  No Windows machine here, and no CI. `windows.py` is unreachable off `win32`,
+- **PR #1's Windows path beyond "it imports and enumerates".** CI now proves
+  the module loads and `list_windows()` runs on a real Windows desktop, which is
+  more than nothing and much less than the feature working. **Raising a window
+  on Windows has never been verified by anyone but the contributor.**
+  No Windows machine here. `windows.py` is unreachable off `win32`,
   so it cannot hurt a macOS user, but the manifest advertises Windows and the
   marketplace will list it that way. Tiago's Windows 11 / Herdr 0.8.x / VS Code
   run is the only evidence it works.
@@ -406,7 +437,7 @@ No AMQ traffic occurred; there is no `## AMQ coordination` section.
 
 ## Window slug
 
-`ide-jump-ci-and-v02`
+`ide-jump-v02-reverse`
 
 ## Progress log
 
@@ -581,3 +612,20 @@ No AMQ traffic occurred; there is no `## AMQ coordination` section.
   the only test suite was survivable for one PR and will not stay that way, and
   the cheap half (compile, the deferred-`termios` assertion, the `find_index`
   table) needs no window server. Slug moved to `ide-jump-ci-and-v02`.
+
+- 2026-08-24 09:48 — **CI implemented; the repo has tests for the first time.**
+  `c84a305`, all 7 jobs green. Deliberately scoped: window enumeration and
+  raising need a real desktop and are permanently out, so the suite covers the
+  ranked matching rules and the import shape, which is where every regression
+  this project has had actually lived. Mutation-checked the suite before
+  trusting it — five separate breakages each fail at least one test, including
+  reinstating the module-scope `import termios` that PR #1 removed. The Windows
+  runner earned its place immediately: those tests were confirmed to run rather
+  than skip, so `EnumWindows` and the window filter have now executed on a real
+  Windows machine, which had never happened. Added a CI badge and a CHANGELOG
+  entry. **Also recorded a new standing rule** in a new repo `CLAUDE.md`: never
+  post PR/issue text under Troy's name without showing him the draft first, and
+  keep it short — his note after PR #1, where two posted comments ran several
+  paragraphs against his own one-line style. Same file records that this
+  checkout is the live plugin, so PRs get a worktree. Slug back to
+  `ide-jump-v02-reverse` — the reverse jump is the only substantial item left.

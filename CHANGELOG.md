@@ -1,8 +1,17 @@
 # Changelog
 
-**Last Updated: 2026-08-24 09:38**
+**Last Updated: 2026-08-24 09:47**
 
 ## [Unreleased]
+
+- CI, and the first tests: a standard-library `unittest` suite over the title
+  matching and the import shape, run on Linux, macOS and Windows against Python
+  3.9 and 3.13. Enumerating and raising windows needs a real desktop and stays
+  untestable; what CI covers is the ranked matching rules and the deferred
+  platform imports, which is where the regressions have actually been. Windows
+  is in the matrix because `idejump.backends.windows` cannot be imported off
+  Windows, so nothing checked it at all. A separate job fails the build on any
+  third-party import.
 
 - Windows backend, via `user32` through `ctypes` — no pywin32, no psutil, still
   standard library only. `EnumWindows` to enumerate, `SetForegroundWindow` to
