@@ -1,6 +1,6 @@
 # Publishing ide-jump
 
-**Last Updated: 2026-08-24 09:48**
+**Last Updated: 2026-08-24 09:58**
 
 `agentience.ide-jump` is a Herdr plugin that gets you back to your IDE: one key
 raises the editor window for the focused pane's project, another opens a
@@ -629,3 +629,15 @@ No AMQ traffic occurred; there is no `## AMQ coordination` section.
   paragraphs against his own one-line style. Same file records that this
   checkout is the live plugin, so PRs get a worktree. Slug back to
   `ide-jump-v02-reverse` — the reverse jump is the only substantial item left.
+
+- 2026-08-24 09:58 — Added `CONTRIBUTING.md` (`1494aa2`), 67 lines, four things
+  only: **the maintainer can test macOS and nothing else**, so a contributor's
+  own testing is the verification and should state what it did *not* cover; the
+  test command; the standard-library rule with the reason (clone-and-go install)
+  and the defer-platform-imports corollary; and the AppleScript bulk-query rule,
+  which is worth writing down because it presents as a hang with an empty log
+  rather than an error. Verified every factual claim in it against the repo
+  before committing. Deliberately omits code of conduct, CLA, commit conventions
+  and issue templates — one contributor so far. The reason it is a separate file
+  rather than a README section is that GitHub links it from the PR- and
+  issue-creation UI, i.e. at the moment it is relevant.
