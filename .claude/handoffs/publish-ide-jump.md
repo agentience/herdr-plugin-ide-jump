@@ -1,12 +1,15 @@
 # Publishing ide-jump
 
-**Last Updated: 2026-08-21 16:39**
+**Last Updated: 2026-08-24 08:57**
 
 `agentience.ide-jump` is a Herdr plugin that gets you back to your IDE: one key
 raises the editor window for the focused pane's project, another opens a
-filterable popup already sitting on that project. It is **built, linked, and
-running live on this machine** — Troy's `prefix+alt+c` and `ctrl+shift+w` both
-route through it. What remains is publication and two manual checks.
+filterable popup already sitting on that project. It is **built, linked,
+published, and confirmed indexed in the marketplace** — Troy's `prefix+alt+c`
+and `ctrl+shift+w` both route through it live on this machine. What remains is
+two things gated on Troy's go-ahead (the install-path test, and landing the
+picker screenshot) plus checking whether anyone has replied in the Discord
+channel it was announced in.
 
 It was built inside the IFTI repo's session on 2026-08-21 and handed over here
 because the work is no longer about IFTI. The originating document is
@@ -35,11 +38,22 @@ down. Read it only for the Herdr-adoption context around it.
 
 **Whether to drop osascript for the accessibility API directly.** Raised
 2026-08-21 when Troy asked why the plugin is Python when Herdr is Rust. The
-honest answer is that language is not the bottleneck — after `f314b9b` the
-remaining ~0.7s is a single `osascript` round trip to System Events, and a Rust
-port that still shells to `osascript` would be exactly as slow. What would
-actually be fast is calling `AXUIElement` directly, which is a native API:
-plausibly ~50ms rather than ~700ms.
+honest answer is that language is not the bottleneck — a Rust port that still
+shells to `osascript` would be exactly as slow. What would actually be fast is
+calling `AXUIElement` directly, a native API bypassing the IPC round trip
+entirely.
+
+**The floor moved after this decision was first written, and it weakens the
+case for going native.** `f314b9b` cut process discovery from three System
+Events filters to `ps`; `1eb7954` (same session, 2026-08-21 16:29) then found
+the same per-dereference trap one level down inside `ENUM_WINDOWS`/`RAISE` and
+replaced a `repeat with w in windows` loop with a single bulk query. That took
+the one remaining `osascript` round trip from ~700ms to **~217ms** (the whole
+popup list render is 298ms). `AXUIElement` would still very likely beat that —
+plausibly tens of ms rather than 217ms — but the win on the table is now a few
+hundred milliseconds, not most of a second. It is a smaller prize for the same
+cost (see below), which is why *leave it* is a stronger recommendation now
+than it was when this was first raised.
 
 The cost is the plugin's best property. It is standard-library Python with no
 `[[build]]` step, so `herdr plugin install` is a clone and nothing else — no
@@ -50,8 +64,9 @@ than one new module.
 
 Options, in the order I would try them:
 
-1. **Leave it.** 0.85s is no longer the complaint that prompted this. Costs
-   nothing, and keeps install trivial. *Recommendation.*
+1. **Leave it.** 298ms for the popup list, 938ms for `jump`, is no longer the
+   complaint that prompted this. Costs nothing, and keeps install trivial.
+   *Recommendation.*
 2. **PyObjC for the AX calls, if present, falling back to osascript.** Gets the
    speed with no build step and no hard dependency, but PyObjC is not in the
    standard library, so the fast path only exists on machines that happen to
@@ -60,8 +75,9 @@ Options, in the order I would try them:
    the tidiest fit with Herdr, but it is the option that ends clone-and-go
    install, and it should wait until someone other than Troy is running this.
 
-Not urgent either way — this is a "if the 0.7s ever annoys you" decision, not a
-blocker.
+Not urgent either way — this is a "if 217ms ever annoys you" decision, not a
+blocker, and a weaker one than it was: the prize shrank from ~650ms recovered
+to well under that.
 
 ## Decisions resolved
 
@@ -75,6 +91,12 @@ else's project and does not belong in the org.
 
 The id remains `agentience.ide-jump` and must not change: it is what user
 keybindings reference and what `herdr plugin config-dir` keys on.
+
+**Whether this handoff document should stay public in the repo — settled
+2026-08-21.** It is tracked and committed, so it is public at
+https://github.com/agentience/herdr-plugin-ide-jump alongside the code. Flagged
+to Troy twice, since it carries local paths and Herdr config detail; both times
+he said "commit and push." Treat as accepted — do not re-raise it.
 
 Nothing else is open.
 
@@ -95,9 +117,13 @@ Nothing else is open.
 - [x] **Add the GitHub topic `herdr-plugin`.** Applied and verified via
       `gh api repos/agentience/herdr-plugin-ide-jump --jq .topics`. That topic is
       the entire marketplace mechanism.
-- [ ] **Confirm the marketplace actually picked it up.** Everything on our side
-      is already proven, so this is pure waiting — see *Marketplace indexing*
-      below for how to check and what "not there yet" means.
+- [x] **Confirm the marketplace actually picked it up.** Verified 2026-08-24
+      08:57 at https://herdr.dev/plugins: `ide-jump` is in the index,
+      `firstSeenAt: 2026-08-22T11:31:22Z`, current index build `generatedAt:
+      2026-08-23T00:31:20Z` tracks `headCommit 5cd969f` (current HEAD, not a
+      stale clone). Manifest parsed completely — id, name, version,
+      `minHerdrVersion`, platforms, description all present. Catalogue is now
+      762 plugins; the listing has 1 star.
 - [ ] **Decide whether to keep the local link or switch to the installed copy.**
       Installing over a locally linked plugin is **refused** — it needs
       `herdr plugin unlink agentience.ide-jump` first. Keeping the link is the
@@ -107,14 +133,32 @@ Nothing else is open.
       unlinking: `herdr plugin install agentience/herdr-plugin-ide-jump`. There
       are no `[[build]]` commands, so install is a clone plus registration —
       but it has never been exercised.
-      **No longer blocked** — the keypress check passed 2026-08-21 16:35. Still
-      worth doing deliberately rather than casually: unlinking swaps the live
-      plugin out from under Troy's working keybindings, so re-link immediately
-      afterwards (`herdr plugin link <this dir>`) and confirm with
-      `herdr plugin list`. Troy has not yet said to go ahead.
-- [ ] Optional: **README screenshot or a short cast of the picker.** The
-      marketplace card is a repo card; nothing sells a picker like seeing it.
-      Now that the repo is public this is the highest-value optional item.
+      **Doubly unblocked now** — the keypress check passed 2026-08-21 16:35
+      *and* the repo is confirmed in the marketplace index. Still worth doing
+      deliberately: unlinking swaps the live plugin out from under Troy's
+      working keybindings, so re-link immediately afterwards
+      (`herdr plugin link <this dir>`) and confirm with `herdr plugin list`.
+      Troy has not yet said to go ahead. **Next actionable step for a fresh
+      session, pending Troy's word.**
+- [ ] **(in progress)** **Crop and land `jump-popup.jpg` in the README.** Troy
+      took a screenshot 2026-08-24 08:56, untracked, sitting at the repo root
+      (1000x839 JPEG). Viewed: it shows the popup pane titled "Jump to IDE
+      window", body "Switch to Visual Studio Code window", a `6/6` count, six
+      repo rows with **`herdr-plugin-ide-jump` correctly preselected**, and the
+      hint line `type to filter · ↑↓ move · enter switch · esc cancel` — real
+      evidence the preselect works. It is not usable as-is: it is a crop of a
+      full screen, so fragments of other terminal panes bleed in along both the
+      left and right edges, and roughly the bottom two-thirds is empty black
+      below the six rows. Needs a tighter crop to just the popup, then commit
+      it and add a README reference. Not yet committed — Troy has not asked for
+      that either.
+- [ ] **Check the `sanvio` Discord channel (id `1523531109101600851`) for
+      replies.** The plugin was announced there 2026-08-21 16:39 via
+      `discord-notify`, HTTP 200, ending "feedback and bug reports welcome."
+      Nobody has looked since. It is the only channel where anyone other than
+      Troy has been told this plugin exists, so a reply there — especially a
+      bug report from a first outside user — is the single most valuable thing
+      that could be waiting. Do not assume silence; check.
 - [ ] Optional: **v0.2 — the reverse jump.** A key inside the editor that raises
       the Herdr pane for that repo. The plugin was named `ide-jump` rather than
       `back-to-ide` specifically so this lands inside it rather than needing a
@@ -166,7 +210,8 @@ that are not obvious from the code:
   which is how `list` came to take 2s while spending 0.12s in Python. Process
   discovery is `ps` now (`f314b9b`) and must stay that way; if you need another
   per-process fact, get it from `ps`, never by adding a fourth filter. What is
-  left is one `ENUM_WINDOWS` round trip at ~0.7s, and that is the floor for
+  left is one `ENUM_WINDOWS` round trip — ~0.7s then, **~217ms** after
+  `1eb7954` fixed the loop below — and that is the floor for
   osascript. **The same trap lives one level down**, and did: `ENUM_WINDOWS`
   and `RAISE` both built their title lists with `repeat with w in windows`,
   and since the process reference is itself a `first ... whose unix id is`
@@ -201,41 +246,24 @@ that are not obvious from the code:
 
 ## Marketplace indexing
 
+**Confirmed indexed — 2026-08-24, see Work items above and Verification
+state below.** This section now only needs to record the durable lesson for
+whatever gets published next.
+
 **There is no marketplace CLI command.** `herdr plugin --help` lists only
 install/uninstall/link/unlink/enable/disable/list/config-dir/action/log/pane.
 The marketplace is the web page **https://herdr.dev/plugins** (`/marketplace`
 serves the same thing), which embeds its whole catalogue as a JSON blob in the
-HTML — so it is greppable without a browser:
+HTML — greppable without a browser (`grep -o '"generatedAt":"[^"]*"'` etc).
 
-```bash
-curl -sS -L https://herdr.dev/plugins | grep -o '"generatedAt":"[^"]*"' | head -1
-curl -sS -L https://herdr.dev/plugins | grep -c 'herdr-plugin-ide-jump'
-```
-
-**Read `generatedAt` before concluding anything.** It is a UTC timestamp on the
-index build, and the published index can be *hours* stale — at 2026-08-21
-23:07 UTC the live page still reported `generatedAt: 2026-08-21T18:01:29Z`,
-**5h06m old** — and at 23:35 UTC it reported *the same build*, unchanged, against the "refreshes every 30 minutes" this document
-previously claimed. That claim came from the Herdr docs, not from observation;
-do not plan around it. Absence from an index whose `generatedAt` predates the
-repo's creation (2026-08-21 23:05 UTC) means nothing at all.
-
-**Everything on our side is already verified, so there is nothing to debug
-until a fresh index skips us:**
-
-- The repo matches the index's own upstream query exactly —
-  `gh api -X GET search/repositories -f q='topic:herdr-plugin is:public repo:agentience/herdr-plugin-ide-jump'`
-  returns `total_count: 1` (checked 2026-08-21 16:10).
-- `herdr-plugin.toml` parses under `tomllib` with all of `id`, `name`,
-  `version`, `min_herdr_version`, `platforms`, `actions`, `panes`.
-
-That matters because the index publishes its own reject buckets alongside the
-catalogue — `missingManifestCount: 20`, `invalidManifestCount: 1`,
-`duplicateManifestCount: 5`, `blacklistedCount: 2` in the 18:01 build. If a
-build newer than the repo lands and `ide-jump` is still missing, check whether
-those counts moved rather than guessing; the catalogue had 742 plugins across
-730 repositories, so this is a busy index and being crowded out is not a
-failure mode, but a manifest reject is.
+**The published index can lag for many hours, and the "refreshes every 30
+minutes" figure from the Herdr docs is not something to plan around.** Two
+observations of this repo's own listing showed the *same* `generatedAt:
+2026-08-21T18:01:29Z` build 28 minutes apart. This repo was created 2026-08-21
+23:05 UTC and did not appear as `firstSeenAt` until 2026-08-22T11:31:22Z —
+over 12 hours later. Absence from a fresh listing is not evidence of a broken
+manifest; check `generatedAt` against the repo's creation time before
+concluding anything.
 
 ## Troubleshooting
 
@@ -277,14 +305,18 @@ list` prints window titles.
 - `herdr server reload-config` → `status: applied`, no diagnostics, after the
   keybindings were repointed.
 
+- **Interactive picker input — verified 2026-08-21 16:35 by Troy**, against
+  `1eb7954`: arrows, filtering, Enter and Esc inside a Herdr popup all take
+  real keystrokes. This was the longest-standing unknown in the project. The
+  `jump-popup.jpg` screenshot (repo root, untracked) is a second record of it,
+  showing the preselected row.
+- **Listed in the Herdr marketplace — verified 2026-08-24 08:57.**
+  `firstSeenAt: 2026-08-22T11:31:22Z`; the index build tracks `headCommit
+  5cd969f`, and the manifest parsed in full.
+
 **NOT verified — do not assume:**
-- ~~Interactive picker input~~ — **verified 2026-08-21 16:35 by Troy** against
-  `1eb7954`: the popup takes real keystrokes and the picker works. This was the
-  longest-standing unknown in the project.
-- **`herdr plugin install` from GitHub.** Never run. The remote now exists, so
-  this is unblocked once the keypress check passes.
-- **That the marketplace actually indexed it.** Absent from the index as of
-  2026-08-21 16:10 PDT, but that snapshot predates the repo — see below.
+- **`herdr plugin install` from GitHub.** Never run. Nothing blocks it now —
+  see the work item, which wants Troy's go-ahead rather than a fix.
 - **Anything on a non-macOS platform.** There is no other backend.
 - **Kiro's `raise`.** Enumeration was verified against Kiro; raising a Kiro
   window was not.
@@ -300,7 +332,7 @@ list` prints window titles.
 
 ## Window slug
 
-`ide-jump-publish`
+`ide-jump-install-test`
 
 ## Progress log
 
@@ -388,3 +420,22 @@ list` prints window titles.
   The bot token lives in `~/.claude/agentic-config.local.json` and was untouched.
   Note for next time: the skill's named-channel flag is `--channel-name`;
   `--channel` takes a raw id, so passing a name there posts nowhere useful.
+
+- 2026-08-24 08:57 — Refreshed for handoff. **The marketplace question closed
+  itself:** the plugin has been indexed since `firstSeenAt 2026-08-22T11:31:22Z`
+  and the live build tracks `headCommit 5cd969f`, so the index is following
+  current HEAD and the manifest parses in full — no action was ever needed, only
+  patience. Cut `## Marketplace indexing` down to the durable lesson (published
+  index lags many hours; the docs' "every 30 minutes" is not plannable) and
+  dropped the how-to-tell-if-it-is-broken apparatus. Corrected the AX/Rust
+  decision, which still quoted a ~700ms floor: `1eb7954` cut that to ~217ms, so
+  the win from going native is now a few hundred ms rather than most of a second
+  — recommendation to leave it is unchanged but now rests on a smaller number.
+  Fixed the same stale figure in Traps. Logged the untracked `jump-popup.jpg`
+  Troy captured at 08:56 as the concrete form of the screenshot item, with what
+  it shows and why it needs cropping first. Added an explicit work item to check
+  the `sanvio` Discord channel for replies — announced there 2026-08-21, never
+  looked at since, and the only place anyone outside this machine has been told
+  the plugin exists. Window slug moved from `ide-jump-publish` to
+  `ide-jump-install-test`, since publishing is finished and the install-path
+  test is what remains.
