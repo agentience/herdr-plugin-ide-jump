@@ -1,6 +1,6 @@
 # IDE Jump — a Herdr plugin
 
-**Last Updated: 2026-08-24 09:12**
+**Last Updated: 2026-08-24 09:38**
 
 Get back to your IDE. From a [Herdr](https://herdr.dev) pane, one key raises
 the editor window for *that pane's project* — no leaving the keyboard, no
@@ -16,15 +16,15 @@ Two gestures, which in the ordinary case do the same thing:
 - **Jump** raises that same window with no UI and no Enter.
 
 **Start with pick.** Because the picker preselects, jump saves exactly one
-keypress on a project whose window is already open — that is the whole of the
-difference, and it is not much. The two diverge only when nothing matches:
-jump runs the configured `open_command` and opens the project, which is the
-only path that handles *the editor isn't up yet*, while pick has nothing to
-preselect, opens on an unrelated first row that Enter will happily raise, and
-exits with an error when there are no editor windows at all.
+keypress on a project whose window is already open — and that is very nearly
+the whole of the difference. When nothing matches, both run the configured
+`open_command` and open the project, so either gesture handles *the editor
+isn't up yet*. Pick shows the list instead only when opening is not possible —
+no `open_command`, or it is not on PATH — and there are other windows to offer,
+on the grounds that the wrong list still beats a keypress that does nothing.
 
-So: bind **pick** for everyday use, and add **jump** if you want the cold-start
-behaviour or prefer one keystroke to two. Neither is a fallback for the other.
+So: bind **pick** for everyday use, and add **jump** if you prefer one keystroke
+to two, or want the gesture to raise a window with no UI at all.
 
 macOS and Windows today. The window-manager surface is deliberately two
 operations wide — enumerate windows, raise one — so a port is one new module;
@@ -92,8 +92,7 @@ type = "plugin_action"
 command = "agentience.ide-jump.pick"
 description = "pick an editor window"
 
-# Optional. Same result one keypress sooner when the window already exists,
-# and the only gesture that opens the project when it does not.
+# Optional. Same result as pick, one keypress sooner and with no popup.
 [[keys.command]]
 key = "prefix+alt+c"
 type = "plugin_action"
@@ -200,7 +199,9 @@ In order, stopping at the first that answers:
 2. The workspace label looked up by `workspace_id`.
 3. `foreground_cwd` of the focused pane, via `herdr pane current`, resolved to
    its git root — so a pane sitting in `packages/backend` and one in
-   `apps/web` both land on the one window.
+   `apps/web` both land on the one window. Where Herdr does not report
+   `foreground_cwd` at all, as on Windows, `cwd` is used instead: less fresh,
+   since it is only as current as the last OSC 7 that pane saw, but present.
 4. `focused_pane_cwd` / `workspace_cwd` from the invocation context.
 
 To see which of those answered, run `python3 ide_jump.py why` from the

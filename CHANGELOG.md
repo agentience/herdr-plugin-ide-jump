@@ -1,6 +1,6 @@
 # Changelog
 
-**Last Updated: 2026-08-22 13:40**
+**Last Updated: 2026-08-24 09:38**
 
 ## [Unreleased]
 
@@ -29,9 +29,11 @@
   test could see it. Ranked last and still compared per whole segment, so
   `articles` does not match `articles-archive`.
 - `pick` opens the project when nothing matches, instead of listing other
-  projects' windows with an unrelated first row for Enter to raise. Diverges
-  from the documented split between the two gestures, deliberately: the gesture
+  projects' windows with an unrelated first row for Enter to raise. The gesture
   asks for this project's editor, and every row on offer was the wrong project.
+  This ends the split the README used to draw between the two gestures — both
+  now handle cold start, and `pick` falls back to the list only when opening is
+  not possible and there are other windows to show.
 - Fix cold start never firing on a labelled Herdr workspace. `resolve_project`
   answers with the workspace label and no root, and an empty root silently means
   "do not open" — so `open_command` was unreachable on the ordinary case. Root
